@@ -1,16 +1,7 @@
-import React from 'react'
+import React from "react";
 
 const Loading: React.FC = () => (
-  <div
-    style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '200px',
-    }}
-  >
-    加载中...
-  </div>
-)
+   <div className="flex justify-center items-center h-[200px]">加载中...</div>
+);
 
-export default Loading
+export default Loading;
