@@ -1,0 +1,17 @@
+import { use, useEffect, useState } from "react";
+import { eventBus } from "@/utils/EventBus";
+
+export default function TestComponent() {
+   const [count, setCount] = useState(0);
+
+   useEffect(() => {
+      const unsubscribe = eventBus.on("testCount", () => {
+         // setCount(num);
+      });
+      return () => {
+         unsubscribe();
+      };
+   }, []);
+
+   return <div>{count}</div>;
+}

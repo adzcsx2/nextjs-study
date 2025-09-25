@@ -1,6 +1,7 @@
 "use client";
+import { postBook } from "@/api/book";
 import { Button, Form, FormProps, Image, Input, Typography } from "antd";
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 
 type FieldType = {
    username?: string;
@@ -9,6 +10,15 @@ type FieldType = {
 
 export default function Login() {
    const [loginState, setLoginState] = useState({ status: "", message: "" });
+
+   useEffect(() => {
+      postBook({ name: "测试", category: "测试", author: "火" }).then(
+         (data) => {
+            console.log("postBook data:", data);
+         }
+      );
+   }, []);
+
    const onFinish: FormProps<FieldType>["onFinish"] = (values) => {
       console.log("Success:", values);
       setLoginState({ status: "error", message: "登录失败" });
@@ -18,7 +28,6 @@ export default function Login() {
       errorInfo
    ) => {
       console.log("Failed:", errorInfo);
-
       setLoginState({
          status: "error",
          message: errorInfo.errorFields[0].errors[0],

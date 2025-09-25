@@ -18,6 +18,24 @@ const nextConfig: NextConfig = {
          },
       ],
    },
+   async rewrites() {
+      // 动态获取代理目标地址
+      const getProxyTarget = () => {
+         // 优先使用环境变量，如果没有则使用默认值
+         return process.env.PROXY_TARGET;
+      };
+
+      const baseUrl = getProxyTarget();
+
+      console.log(`🔄 API代理配置: /api/* -> ${baseUrl}/api/*`);
+
+      return [
+         {
+            source: "/api/:path*",
+            destination: `${baseUrl}/api/:path*`,
+         },
+      ];
+   },
 };
 
 export default nextConfig;
