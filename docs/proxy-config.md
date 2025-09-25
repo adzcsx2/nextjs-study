@@ -7,6 +7,7 @@
 ## 工作原理
 
 ### 1. 客户端请求流程
+
 ```
 浏览器发起请求: /api/book/list
 ↓
@@ -16,8 +17,9 @@ Next.js rewrites 拦截: /api/*
 ```
 
 ### 2. 环境区分
-- **客户端环境（浏览器）**: 使用相对路径 `/api`，由 Next.js 代理处理
-- **服务端环境（SSR/API Routes）**: 使用完整 URL，直接调用外部 API
+
+-  **客户端环境（浏览器）**: 使用相对路径 `/api`，由 Next.js 代理处理
+-  **服务端环境（SSR/API Routes）**: 使用完整 URL，直接调用外部 API
 
 ## 配置方式
 
@@ -39,18 +41,21 @@ SERVER_API_URL=https://your-api-server.com/api
 ### 2. 不同环境的配置
 
 #### 开发环境 (.env.local)
+
 ```bash
 PROXY_TARGET=https://mock.apifox.cn/m1/2398938-0-default
 SERVER_API_URL=https://mock.apifox.cn/m1/2398938-0-default/api
 ```
 
 #### 测试环境 (.env.test.local)
+
 ```bash
 PROXY_TARGET=https://test-api.yourcompany.com
 SERVER_API_URL=https://test-api.yourcompany.com/api
 ```
 
 #### 生产环境 (.env.production.local)
+
 ```bash
 PROXY_TARGET=https://api.yourcompany.com
 SERVER_API_URL=https://api.yourcompany.com/api
@@ -65,17 +70,17 @@ import { http } from "@/utils/http";
 
 // GET 请求
 const getBooks = async () => {
-  const response = await http.get("/book/list", { page: 1, size: 10 });
-  return response.data;
+   const response = await http.get("/book/list", { page: 1, size: 10 });
+   return response.data;
 };
 
 // POST 请求
 const createBook = async (bookData) => {
-  const response = await http.post("/book", bookData, {
-    showSuccess: true,
-    showLoading: true
-  });
-  return response.data;
+   const response = await http.post("/book", bookData, {
+      showSuccess: true,
+      showLoading: true,
+   });
+   return response.data;
 };
 ```
 
@@ -84,15 +89,15 @@ const createBook = async (bookData) => {
 ```typescript
 // 不显示 loading，显示成功消息
 await http.put("/book/1", updateData, {
-  showLoading: false,
-  showSuccess: true,
-  needToken: true
+   showLoading: false,
+   showSuccess: true,
+   needToken: true,
 });
 
 // 防重复请求，重试机制
 await http.get("/book/1", undefined, {
-  preventDuplicate: true,
-  retry: 3
+   preventDuplicate: true,
+   retry: 3,
 });
 ```
 
@@ -101,15 +106,15 @@ await http.get("/book/1", undefined, {
 ```typescript
 // 文件上传
 const uploadFile = async (file: File) => {
-  return await http.upload("/book/import", file, {
-    showLoading: true,
-    showSuccess: true
-  });
+   return await http.upload("/book/import", file, {
+      showLoading: true,
+      showSuccess: true,
+   });
 };
 
 // 文件下载
 const downloadReport = async () => {
-  await http.download("/book/export", "books.xlsx");
+   await http.download("/book/export", "books.xlsx");
 };
 ```
 
@@ -119,12 +124,12 @@ const downloadReport = async () => {
 
 ```typescript
 interface RequestOptions {
-  preventDuplicate?: boolean;  // 防重复请求，默认 true
-  showLoading?: boolean;       // 显示加载状态，默认 true
-  showSuccess?: boolean;       // 显示成功消息，默认 false
-  needToken?: boolean;         // 是否需要 token，默认 true
-  retry?: number;              // 重试次数，默认 0
-  params?: Record<string, string | number | boolean | null | undefined>;
+   preventDuplicate?: boolean; // 防重复请求，默认 true
+   showLoading?: boolean; // 显示加载状态，默认 true
+   showSuccess?: boolean; // 显示成功消息，默认 false
+   needToken?: boolean; // 是否需要 token，默认 true
+   retry?: number; // 重试次数，默认 0
+   params?: Record<string, string | number | boolean | null | undefined>;
 }
 ```
 
@@ -135,47 +140,53 @@ import { setLoadingConfig } from "@/utils/http";
 
 // 设置全局 loading 配置
 setLoadingConfig({
-  type: 'antd',  // 'antd' | 'store' | 'event' | 'none'
-  antdOptions: {
-    content: '加载中...',
-    duration: 0
-  }
+   type: "antd", // 'antd' | 'store' | 'event' | 'none'
+   antdOptions: {
+      content: "加载中...",
+      duration: 0,
+   },
 });
 ```
 
 ## 错误处理
 
 系统自动处理以下错误：
-- 401: 未授权，自动跳转登录页
-- 403: 禁止访问
-- 404: 资源不存在
-- 500: 服务器错误
-- 网络错误
-- 请求超时（15秒）
+
+-  401: 未授权，自动跳转登录页
+-  403: 禁止访问
+-  404: 资源不存在
+-  500: 服务器错误
+-  网络错误
+-  请求超时（15 秒）
 
 ## 特性
 
 ### 1. 自动代理
-- 开发环境和生产环境无需修改代码
-- 通过环境变量灵活配置代理目标
+
+-  开发环境和生产环境无需修改代码
+-  通过环境变量灵活配置代理目标
 
 ### 2. 请求管理
-- 防重复请求
-- 请求超时控制
-- 自动重试机制
+
+-  防重复请求
+-  请求超时控制
+-  自动重试机制
 
 ### 3. 用户体验
-- 自动 loading 状态
-- 成功/失败消息提示
-- 错误统一处理
+
+-  自动 loading 状态
+-  成功/失败消息提示
+-  错误统一处理
 
 ### 4. 安全性
-- 自动添加 Authorization 头
-- Token 过期自动处理
+
+-  自动添加 Authorization 头
+-  Token 过期自动处理
 
 ## 部署说明
 
 ### 1. 本地开发
+
 ```bash
 # 复制环境变量模板
 cp .env.example .env.local
@@ -188,6 +199,7 @@ npm run dev
 ```
 
 ### 2. 生产部署
+
 ```bash
 # 设置生产环境变量
 export PROXY_TARGET=https://your-prod-api.com
@@ -199,27 +211,24 @@ npm run build
 npm start
 ```
 
-### 3. Docker 部署
-```dockerfile
-ENV PROXY_TARGET=https://your-api.com
-ENV SERVER_API_URL=https://your-api.com/api
-```
-
 ## 故障排查
 
 ### 1. 代理不生效
-- 检查 `.env.local` 中的 `PROXY_TARGET` 配置
-- 确认目标服务器地址是否正确
-- 查看控制台是否有代理配置日志
+
+-  检查 `.env.local` 中的 `PROXY_TARGET` 配置
+-  确认目标服务器地址是否正确
+-  查看控制台是否有代理配置日志
 
 ### 2. 请求失败
-- 检查网络连接
-- 确认 API 接口地址是否正确
-- 查看浏览器开发者工具的网络面板
+
+-  检查网络连接
+-  确认 API 接口地址是否正确
+-  查看浏览器开发者工具的网络面板
 
 ### 3. Token 相关问题
-- 确认 localStorage 中是否有有效的 token
-- 检查 token 格式是否正确（Bearer token）
+
+-  确认 localStorage 中是否有有效的 token
+-  检查 token 格式是否正确（Bearer token）
 
 ## 注意事项
 
