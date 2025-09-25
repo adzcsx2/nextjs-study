@@ -76,10 +76,8 @@ const TestPage: React.FC = () => {
             className="ml-4"
             onClick={() => {
                const a = count + 1;
-                  setCount(a);
-               eventBus.emit("testCount", () => {
-                  console.log("事件触发");
-               });
+               setCount(a);
+               eventBus.emit("testCount", count);
             }}
          >
             测试eventBus {count}

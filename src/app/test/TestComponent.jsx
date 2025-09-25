@@ -5,8 +5,8 @@ export default function TestComponent() {
    const [count, setCount] = useState(0);
 
    useEffect(() => {
-      const unsubscribe = eventBus.on("testCount", () => {
-         // setCount(num);
+      const unsubscribe = eventBus.on("testCount", (num) => {
+         setCount(num);
       });
       return () => {
          unsubscribe();
