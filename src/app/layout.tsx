@@ -12,8 +12,10 @@ import AntdConfigProvider from "@/components/AntdConfigProvider";
 //   subsets: ["latin"],
 // });
 
+import { env } from "@/config/env";
+
 export const metadata: Metadata = {
-   title: process.env.NEXT_PUBLIC_APP_TITLE,
+   title: env.appTitle,
 };
 
 export default function RootLayout({

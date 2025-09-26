@@ -19,7 +19,6 @@ Next.js rewrites 拦截: /api/*
 ### 2. 环境区分
 
 -  **客户端环境（浏览器）**: 使用相对路径 `/api`，由 Next.js 代理处理
--  **服务端环境（SSR/API Routes）**: 使用完整 URL，直接调用外部 API
 
 ## 配置方式
 
@@ -29,13 +28,8 @@ Next.js rewrites 拦截: /api/*
 
 ```bash
 # 代理目标地址
-PROXY_TARGET=https://your-api-server.com
+PROXY_BASE_URL=https://your-api-server.com
 
-# 客户端API基础路径
-NEXT_PUBLIC_BASE_API=/api
-
-# 服务端API完整地址
-SERVER_API_URL=https://your-api-server.com/api
 ```
 
 ### 2. 不同环境的配置
@@ -43,22 +37,19 @@ SERVER_API_URL=https://your-api-server.com/api
 #### 开发环境 (.env.local)
 
 ```bash
-PROXY_TARGET=https://mock.apifox.cn/m1/2398938-0-default
-SERVER_API_URL=https://mock.apifox.cn/m1/2398938-0-default/api
+PROXY_BASE_URL=https://mock.apifox.cn/m1/2398938-0-default
 ```
 
 #### 测试环境 (.env.test.local)
 
 ```bash
-PROXY_TARGET=https://test-api.yourcompany.com
-SERVER_API_URL=https://test-api.yourcompany.com/api
+PROXY_BASE_URL=https://test-api.yourcompany.com
 ```
 
 #### 生产环境 (.env.production.local)
 
 ```bash
-PROXY_TARGET=https://api.yourcompany.com
-SERVER_API_URL=https://api.yourcompany.com/api
+PROXY_BASE_URL=https://api.yourcompany.com
 ```
 
 ## 使用示例

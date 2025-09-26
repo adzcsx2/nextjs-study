@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
       // 动态获取代理目标地址
       const getProxyTarget = () => {
          // 优先使用环境变量，如果没有则使用默认值
-         return process.env.PROXY_TARGET;
+         return process.env.NEXT_PUBLIC_BASE_API;
       };
 
       const baseUrl = getProxyTarget();

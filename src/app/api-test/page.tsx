@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button, Card, message, Space, Typography } from "antd";
-import { http } from "@/utils/http";
+import { http } from "@/http/http";
 
 const { Title, Text, Paragraph } = Typography;
 

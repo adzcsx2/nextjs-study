@@ -1,30 +1,32 @@
 "use client";
-import { postBook } from "@/api/book";
 import { Button, Form, FormProps, Image, Input, Typography } from "antd";
 import { use, useEffect, useState } from "react";
 
-type FieldType = {
-   username?: string;
-   password?: string;
-};
+import { api } from "@/api/api";
+import { loginReq } from "@/types/login";
 
 export default function Login() {
    const [loginState, setLoginState] = useState({ status: "", message: "" });
 
-   useEffect(() => {
-      postBook({ name: "测试", category: "测试", author: "火" }).then(
-         (data) => {
-            console.log("postBook data:", data);
+   const onFinish: FormProps<loginReq>["onFinish"] = (values) => {
+      api.login(values).then((data) => {
+         console.log("postLogin data:", data);
+         if (data.code === 200) {
+            // 登录成功
+            setLoginState({ status: "success", message: "登录成功" });
+         } else {
+            // // 登录失败，但不会抛出未捕获错误
+            // setLoginState({
+            //    status: "error",
+            //    message: data.message || "登录失败",
+            // });
          }
-      );
-   }, []);
+      });
 
-   const onFinish: FormProps<FieldType>["onFinish"] = (values) => {
       console.log("Success:", values);
-      setLoginState({ status: "error", message: "登录失败" });
    };
 
-   const onFinishFailed: FormProps<FieldType>["onFinishFailed"] = (
+   const onFinishFailed: FormProps<loginReq>["onFinishFailed"] = (
       errorInfo
    ) => {
       console.log("Failed:", errorInfo);
@@ -61,7 +63,7 @@ export default function Login() {
             onFinishFailed={onFinishFailed}
             autoComplete="off"
          >
-            <Form.Item<FieldType>
+            <Form.Item<loginReq>
                label="账号"
                name="username"
                rules={[{ required: true, message: "请输入账号!" }]}
@@ -69,7 +71,7 @@ export default function Login() {
                <Input className="!w-full" />
             </Form.Item>
 
-            <Form.Item<FieldType>
+            <Form.Item<loginReq>
                label="密码"
                name="password"
                validateStatus={loginState.status === "error" ? "error" : ""}

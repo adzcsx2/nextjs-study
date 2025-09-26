@@ -1,12 +1,12 @@
 "use client";
 import { useLanguageSwitch } from "@/i18n/hooks";
 import { useLoadingStore } from "@/stores/loading";
-import { http } from "@/utils/http";
+import { http } from "@/http/http";
 import { Button, Divider, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import TestComponent from "./TestComponent";
 import { useEffect, useState } from "react";
-import { eventBus } from "@/utils/EventBus";
+import { eventBus } from "@/eventBus/eventBus";
 
 const TestPage: React.FC = () => {
    const { t } = useTranslation("common");

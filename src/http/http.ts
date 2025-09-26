@@ -1,20 +1,12 @@
 import { message } from "antd";
 import i18n from "@/i18n";
-import env from "@/config/env";
+import { env } from "@/config/env";
 
 // ==================== 配置常量 ====================
 // 动态获取基础URL的函数
 const getBaseURL = () => {
-   // 判断是否在浏览器环境
-   if (typeof window !== "undefined") {
-      // 客户端环境：
-      // - 开发环境和生产环境都使用相对路径 '/api'
-      // - Next.js 的 rewrites 会自动代理到配置的目标地址
-      return env.baseAPI;
-   }
-   // 服务端环境（SSR/API Routes）：
-   // - 需要使用完整的URL来调用外部API
-   return env.serverAPI;
+   console.log("Base API URL:", env.baseAPI);
+   return env.baseAPI;
 };
 
 const TIMEOUT = 15000;
@@ -100,7 +92,7 @@ const removePendingRequest = (key: string) => {
 const cancelPendingRequest = (key: string) => {
    const controller = pendingRequests.get(key);
    if (controller) {
-      controller.abort(t("network.duplicateRequest"));
+      controller.abort(t("network:duplicateRequest"));
       pendingRequests.delete(key);
    }
 };
@@ -113,7 +105,7 @@ const showLoading = (config: LoadingConfig = defaultLoadingConfig) => {
    switch (config.type) {
       case "antd":
          loadingInstance = message.loading(
-            config.antdOptions?.content ?? t("network.loadingText"),
+            config.antdOptions?.content ?? t("network:loadingText"),
             config.antdOptions?.duration ?? 0
          );
          break;
@@ -122,7 +114,7 @@ const showLoading = (config: LoadingConfig = defaultLoadingConfig) => {
             .then(({ useLoadingStore }) =>
                useLoadingStore
                   .getState()
-                  .setLoading(true, t("network.loadingText"))
+                  .setLoading(true, t("network:loadingText"))
             )
             .catch((error) =>
                console.warn("Loading store not available:", error)
@@ -131,7 +123,7 @@ const showLoading = (config: LoadingConfig = defaultLoadingConfig) => {
       case "event":
          window.dispatchEvent(
             new CustomEvent("loading:show", {
-               detail: { text: t("network.loadingText") },
+               detail: { text: t("network:loadingText") },
             })
          );
          break;
@@ -167,13 +159,13 @@ const hideLoading = (config: LoadingConfig = defaultLoadingConfig) => {
 // ==================== 错误处理 ====================
 const handleErrorResponse = async (response: Response) => {
    const errorMessages: Record<number, string> = {
-      401: t("network.unauthorized"),
-      403: t("network.forbidden"),
-      404: t("network.notFound"),
-      500: t("network.serverError"),
+      401: t("network:unauthorized"),
+      403: t("network:forbidden"),
+      404: t("network:notFound"),
+      500: t("network:serverError"),
    };
 
-   message.error(errorMessages[response.status] || t("network.networkError"));
+   message.error(errorMessages[response.status] || t("network:networkError"));
 
    if (response.status === 401) {
       localStorage.removeItem("token");
@@ -184,11 +176,11 @@ const handleErrorResponse = async (response: Response) => {
 const handleError = (error: unknown) => {
    const err = error as Error;
    if (err?.name === "AbortError") {
-      message.error(err.message || t("network.requestCanceled"));
+      message.error(err.message || t("network:requestCanceled"));
    } else if (err?.message?.includes("Failed to fetch")) {
-      message.error(t("network.networkConnectionFailed"));
+      message.error(t("network:networkConnectionFailed"));
    } else {
-      message.error(err?.message || t("network.requestSendFailed"));
+      message.error(err?.message || t("network:requestSendFailed"));
    }
 };
 
@@ -245,7 +237,7 @@ class HttpClient {
 
       // 设置超时
       const timeoutId = setTimeout(() => {
-         controller.abort(t("network.requestTimeout"));
+         controller.abort(t("network:requestTimeout"));
       }, TIMEOUT);
 
       const cleanup = () => {
@@ -272,17 +264,22 @@ class HttpClient {
          }
 
          // 解析响应
-         const data = await response.json();
+         // const data = await response.json();
+
+         //模拟返回
+         let data = await response.json();
+         data = { ...data, message: "success", code: 200 };
 
          // 业务状态码处理
          if (data.code === 200) {
             if (showSuccess) {
-               message.success(data.message || t("network.operationSuccess"));
+               message.success(data.message || t("network:operationSuccess"));
             }
             return data;
          } else {
-            message.error(data.message || t("network.operationFailed"));
-            throw new Error(data.message);
+            message.error(data.message || t("network:operationFailed"));
+            // 不抛出错误，直接返回错误数据，让调用方自行判断
+            return data;
          }
       } catch (error: unknown) {
          cleanup();
@@ -291,9 +288,14 @@ class HttpClient {
          // 重复请求不需要处理
          if (
             err?.name === "AbortError" &&
-            err.message?.includes(t("network.duplicateRequest"))
+            err.message?.includes(t("network:duplicateRequest"))
          ) {
-            return Promise.reject(error);
+            // 静默处理，返回错误结构
+            return {
+               code: -1,
+               message: err.message || t("network:duplicateRequest"),
+               data: null,
+            } as ApiResponse<T>;
          }
 
          // 重试机制
@@ -302,9 +304,14 @@ class HttpClient {
             return this.coreRequest<T>(url, { ...options, retry: retry - 1 });
          }
 
-         // 错误处理
+         // 错误处理 - 已经通过message显示给用户了，不再抛出未捕获的错误
          handleError(error);
-         return Promise.reject(error);
+         // 返回错误结构而不是reject，避免未捕获的Promise错误
+         return {
+            code: -1,
+            message: err?.message || t("network:requestSendFailed"),
+            data: null,
+         } as ApiResponse<T>;
       }
    }
 
@@ -452,10 +459,10 @@ class HttpClient {
          document.body.removeChild(link);
          window.URL.revokeObjectURL(downloadUrl);
 
-         message.success(t("network.operationSuccess"));
+         message.success(t("network:operationSuccess"));
       } catch (error) {
          console.error("Download error:", error);
-         message.error(t("network.operationFailed"));
+         message.error(t("network:operationFailed"));
       }
    }
 }
