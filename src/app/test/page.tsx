@@ -6,7 +6,7 @@ import { Button, Divider, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import TestComponent from "./TestComponent";
 import { useEffect, useState } from "react";
-import { eventBus } from "@/eventBus/eventBus";
+import { eventBus } from "@/eventbus/eventBus";
 
 const TestPage: React.FC = () => {
    const { t } = useTranslation("common");

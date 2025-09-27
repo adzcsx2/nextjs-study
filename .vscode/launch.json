@@ -5,14 +5,15 @@
          "request": "launch",
          "type": "chrome",
          "url": "http://localhost:3000",
-         "webRoot": "${workspaceFolder}"
+         "webRoot": "${workspaceFolder}a"
       },
-
       {
          "type": "pwa-msedge",
          "name": "Launch Microsoft Edge",
          "request": "launch",
-         "runtimeArgs": ["--remote-debugging-port=9222"],
+         "runtimeArgs": [
+            "--remote-debugging-port=9222"
+         ],
          "url": "c:\\Users\\long\\.vscode\\extensions\\ms-edgedevtools.vscode-edge-devtools-2.1.9\\out\\startpage\\index.html", // Provide your project's url to finish configuring
          "presentation": {
             "hidden": true
@@ -22,7 +23,10 @@
          "type": "pwa-msedge",
          "name": "Launch Microsoft Edge in headless mode",
          "request": "launch",
-         "runtimeArgs": ["--headless", "--remote-debugging-port=9222"],
+         "runtimeArgs": [
+            "--headless",
+            "--remote-debugging-port=9222"
+         ],
          "url": "c:\\Users\\long\\.vscode\\extensions\\ms-edgedevtools.vscode-edge-devtools-2.1.9\\out\\startpage\\index.html", // Provide your project's url to finish configuring
          "presentation": {
             "hidden": true
@@ -48,7 +52,10 @@
       },
       {
          "name": "Launch Edge and attach DevTools",
-         "configurations": ["Launch Microsoft Edge", "Open Edge DevTools"]
+         "configurations": [
+            "Launch Microsoft Edge",
+            "Open Edge DevTools"
+         ]
       }
    ]
 }

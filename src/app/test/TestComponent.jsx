@@ -1,5 +1,5 @@
 import { use, useEffect, useState } from "react";
-import { eventBus } from "@/eventBus/eventBus";
+import { eventBus } from "@/eventbus/eventBus";
 
 export default function TestComponent() {
    const [count, setCount] = useState(0);
