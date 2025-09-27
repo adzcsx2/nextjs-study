@@ -149,14 +149,14 @@ export default function ApiTestPage() {
                               </Text>
                            </div>
 
-                           {result.success && result.data && (
+                           {result.success && result.data ? (
                               <div>
                                  <Text strong>响应数据:</Text>
                                  <pre className="bg-gray-100 p-2 rounded text-xs max-h-48 overflow-auto">
                                     {JSON.stringify(result.data, null, 2)}
                                  </pre>
                               </div>
-                           )}
+                           ) : null}
 
                            {!result.success && result.error && (
                               <div>

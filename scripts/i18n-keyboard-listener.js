@@ -1729,10 +1729,136 @@ if (args.includes("--sync")) {
 } else if (args.includes("--retry")) {
    console.log("🔄 开始重试翻译失败的项目...");
    retryFailedTranslations();
+} else if (args.includes("--cleanup")) {
+   console.log("🧹 开始清理未使用的翻译键...");
+   cleanupUnusedKeys();
 } else {
    // 启动自动文件处理器
    const processor = new AutoFileProcessor();
    processor.start();
+}
+
+// 清理未使用的翻译键
+async function cleanupUnusedKeys() {
+    const srcPath = path.join(process.cwd(), "src");
+    const zhCommonPath = path.join(process.cwd(), "src/i18n/lang/zh/common.ts");
+    const enCommonPath = path.join(process.cwd(), "src/i18n/lang/en/common.ts");
+    
+    try {
+        // 获取所有源文件中使用的翻译键
+        const usedKeys = new Set();
+        await scanUsedKeys(srcPath, usedKeys);
+        
+        // 读取当前的中文翻译文件
+        const zhContent = fs.readFileSync(zhCommonPath, 'utf8');
+        const zhKeys = extractKeysFromFile(zhContent);
+        
+        // 读取当前的英文翻译文件
+        const enContent = fs.readFileSync(enCommonPath, 'utf8');
+        const enKeys = extractKeysFromFile(enContent);
+        
+        // 找出未使用的键
+        const unusedZhKeys = zhKeys.filter(key => !usedKeys.has(key));
+        const unusedEnKeys = enKeys.filter(key => !usedKeys.has(key));
+        
+        console.log(`📊 扫描结果：`);
+        console.log(`  - 使用中的键: ${usedKeys.size}`);
+        console.log(`  - 中文未使用键: ${unusedZhKeys.length}`);
+        console.log(`  - 英文未使用键: ${unusedEnKeys.length}`);
+        
+        if (unusedZhKeys.length === 0 && unusedEnKeys.length === 0) {
+            console.log("✅ 没有发现未使用的翻译键！");
+            return;
+        }
+        
+        // 清理中文文件
+        if (unusedZhKeys.length > 0) {
+            const newZhContent = removeKeysFromFile(zhContent, unusedZhKeys);
+            fs.writeFileSync(zhCommonPath, newZhContent, 'utf8');
+            console.log(`🧹 已从中文文件删除 ${unusedZhKeys.length} 个未使用的键`);
+        }
+        
+        // 清理英文文件
+        if (unusedEnKeys.length > 0) {
+            const newEnContent = removeKeysFromFile(enContent, unusedEnKeys);
+            fs.writeFileSync(enCommonPath, newEnContent, 'utf8');
+            console.log(`🧹 已从英文文件删除 ${unusedEnKeys.length} 个未使用的键`);
+        }
+        
+        console.log("✅ 清理完成！");
+        
+    } catch (error) {
+        console.error("清理未使用键时出错:", error);
+    }
+}
+
+// 递归扫描使用的翻译键
+async function scanUsedKeys(dirPath, usedKeys) {
+    const items = fs.readdirSync(dirPath);
+    
+    for (const item of items) {
+        const fullPath = path.join(dirPath, item);
+        const stat = fs.statSync(fullPath);
+        
+        if (stat.isDirectory()) {
+            // 跳过一些不需要扫描的目录
+            if (!["node_modules", ".git", ".next", "dist", "build"].includes(item)) {
+                await scanUsedKeys(fullPath, usedKeys);
+            }
+        } else if (stat.isFile()) {
+            // 只处理相关的源文件
+            if (/\.(tsx?|jsx?)$/.test(item)) {
+                const content = fs.readFileSync(fullPath, 'utf8');
+                extractUsedKeysFromContent(content, usedKeys);
+            }
+        }
+    }
+}
+
+// 从文件内容中提取使用的翻译键
+function extractUsedKeysFromContent(content, usedKeys) {
+    // 匹配 t("key") 和 t('key') 格式
+    const tPattern = /t\(\s*["']([^"']+)["']\s*\)/g;
+    let match;
+    
+    while ((match = tPattern.exec(content)) !== null) {
+        usedKeys.add(match[1]);
+    }
+}
+
+// 从翻译文件中提取所有键
+function extractKeysFromFile(content) {
+    const keys = [];
+    // 匹配对象键的模式
+    const keyPattern = /^\s*["']([^"']+)["']\s*:/gm;
+    let match;
+    
+    while ((match = keyPattern.exec(content)) !== null) {
+        keys.push(match[1]);
+    }
+    
+    return keys;
+}
+
+// 从文件内容中删除指定的键
+function removeKeysFromFile(content, keysToRemove) {
+    let newContent = content;
+    
+    for (const key of keysToRemove) {
+        // 匹配整行的键值对（包括可能的逗号）
+        const keyLinePattern = new RegExp(`^\\s*["']${escapeRegex(key)}["']\\s*:.*?(?:,\\s*)?$`, 'gm');
+        newContent = newContent.replace(keyLinePattern, '');
+    }
+    
+    // 清理多余的空行
+    newContent = newContent.replace(/\n\s*\n\s*\n/g, '\n\n');
+    
+    return newContent;
+}
+
+// 转义正则表达式特殊字符
+function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**

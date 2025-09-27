@@ -3,10 +3,11 @@
    "version": "0.1.0",
    "private": true,
    "scripts": {
-      "dev": "concurrently \"next dev --turbopack\" \"node scripts/i18n-keyboard-listener.js\"",
-      "build": "next build --turbopack",
+      "dev": "npm run i18n_clean && concurrently \"next dev --turbopack\" \"node scripts/i18n-keyboard-listener.js\"",
+      "build": "npm run i18n_clean && next build --turbopack",
       "start": "next start",
-      "lint": "eslint"
+      "lint": "eslint",
+      "i18n_clean": "node scripts/i18n-keyboard-listener.js --cleanup"
    },
    "dependencies": {
       "@ant-design/icons": "^5.6.1",
