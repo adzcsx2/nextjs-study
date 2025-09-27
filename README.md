@@ -180,12 +180,6 @@ function LoginPage() {
 如果需要手动控制，可以使用以下命令：
 
 ```bash
-# 手动同步中文到英文翻译  
-npm run i18n_sync
-
-# 重试翻译失败的项目
-npm run i18n_retry
-
 # 清理未使用的翻译键
 npm run i18n_clean
 ```
