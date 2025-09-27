@@ -1,15 +1,32 @@
+// eslint-disable-next-line import/no-anonymous-default-export
 export default {
-  hello: '你好！',
-  welcome: '欢迎使用本系统',
+   "hello": "你好！",
+   "welcome": "欢迎使用本系统",
 
-  // 带插值的翻译
-  userGreeting: '你好，{{username}}！',
-  itemCount: '共 {{count}} 项',
-  lastUpdated: '最后更新：{{date}}',
+   // 带插值的翻译
+   "userGreeting": "你好，{{username}}！",
+   "itemCount": "共 {{count}} 项",
+   "lastUpdated": "最后更新：{{date}}",
 
-  // 表格列标题
-  name: '姓名',
-  age: '年龄',
-  address: '地址',
-}
+   // 表格列标题
+   "name": "姓名",
+   "age": "年龄",
+   "address": "地址",
+   "账号": "账号",
 
+   "请输入账号!": "请输入账号!",
+
+   "请输入密码": "请输入密码",
+
+   "密码": "密码",
+   "密码至少6位!": "密码至少6位!",
+
+   // 自动添加的翻译
+   "登录": "登录",
+
+   // 自动添加的翻译
+   "图书管理系统": "图书管理系统",
+
+   // 自动添加的翻译
+   "登录成功": "登录成功",
+};

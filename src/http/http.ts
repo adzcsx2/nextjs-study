@@ -8,7 +8,6 @@ const getBaseURL = () => {
    console.log("Base API URL:", env.baseAPI);
    return env.baseAPI;
 };
-
 const TIMEOUT = 15000;
 const t = i18n.t.bind(i18n);
 
@@ -21,7 +20,6 @@ interface RequestOptions extends RequestInit {
    retry?: number;
    params?: Record<string, string | number | boolean | null | undefined>;
 }
-
 interface LoadingConfig {
    type: "antd" | "store" | "event" | "none";
    antdOptions?: {
@@ -41,11 +39,10 @@ interface ApiResponse<T = unknown> {
 const pendingRequests = new Map<string, AbortController>();
 let loadingInstance: (() => void) | null = null;
 let loadingCount = 0;
-
 const defaultLoadingConfig: LoadingConfig = {
    type: "antd",
    antdOptions: {
-      content: "加载中...",
+      content: t("jia-zai-zhong"),
       duration: 0,
    },
 };
@@ -60,20 +57,17 @@ const generateReqKey = (
    [url, method, JSON.stringify(params || {}), JSON.stringify(body || {})].join(
       "&"
    );
-
 const buildUrlWithParam = (
    baseUrl: string,
    params?: Record<string, string | number | boolean | null | undefined>
 ): string => {
    if (!params || Object.keys(params).length === 0) return baseUrl;
-
    const searchParams = new URLSearchParams();
    Object.entries(params).forEach(([key, value]) => {
       if (value !== null && value !== undefined) {
          searchParams.append(key, String(value));
       }
    });
-
    const queryString = searchParams.toString();
    return queryString
       ? `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}${queryString}`
@@ -84,11 +78,9 @@ const buildUrlWithParam = (
 const addPendingRequest = (key: string, controller: AbortController) => {
    if (!pendingRequests.has(key)) pendingRequests.set(key, controller);
 };
-
 const removePendingRequest = (key: string) => {
    pendingRequests.delete(key);
 };
-
 const cancelPendingRequest = (key: string) => {
    const controller = pendingRequests.get(key);
    if (controller) {
@@ -101,7 +93,6 @@ const cancelPendingRequest = (key: string) => {
 const showLoading = (config: LoadingConfig = defaultLoadingConfig) => {
    loadingCount++;
    if (loadingCount !== 1) return;
-
    switch (config.type) {
       case "antd":
          loadingInstance = message.loading(
@@ -123,17 +114,17 @@ const showLoading = (config: LoadingConfig = defaultLoadingConfig) => {
       case "event":
          window.dispatchEvent(
             new CustomEvent("loading:show", {
-               detail: { text: t("network:loadingText") },
+               detail: {
+                  text: t("network:loadingText"),
+               },
             })
          );
          break;
    }
 };
-
 const hideLoading = (config: LoadingConfig = defaultLoadingConfig) => {
    loadingCount = Math.max(0, loadingCount - 1);
    if (loadingCount > 0) return;
-
    switch (config.type) {
       case "antd":
          if (loadingInstance) {
@@ -164,15 +155,12 @@ const handleErrorResponse = async (response: Response) => {
       404: t("network:notFound"),
       500: t("network:serverError"),
    };
-
    message.error(errorMessages[response.status] || t("network:networkError"));
-
    if (response.status === 401) {
       localStorage.removeItem("token");
       window.location.href = "/login";
    }
 };
-
 const handleError = (error: unknown) => {
    const err = error as Error;
    if (err?.name === "AbortError") {
@@ -239,13 +227,11 @@ class HttpClient {
       const timeoutId = setTimeout(() => {
          controller.abort(t("network:requestTimeout"));
       }, TIMEOUT);
-
       const cleanup = () => {
          clearTimeout(timeoutId);
          removePendingRequest(reqKey);
          if (needLoading) hideLoading();
       };
-
       try {
          // 发送请求
          const response = await fetch(requestUrl, {
@@ -254,7 +240,6 @@ class HttpClient {
             signal: controller.signal,
             ...restOptions,
          });
-
          cleanup();
 
          // 检查响应状态
@@ -268,22 +253,25 @@ class HttpClient {
 
          //模拟返回
          let data = await response.json();
-         data = { ...data, message: "success", code: 200 };
+         data = {
+            ...data,
+            message: "success",
+            code: 200,
+         };
 
          // 业务状态码处理
          if (data.code === 200) {
             if (showSuccess) {
                message.success(data.message || t("network:operationSuccess"));
             }
-            return data;
+            return data.data;
          } else {
             message.error(data.message || t("network:operationFailed"));
             // 不抛出错误，直接返回错误数据，让调用方自行判断
-            return data;
+            return data.data;
          }
       } catch (error: unknown) {
          cleanup();
-
          const err = error as Error;
          // 重复请求不需要处理
          if (
@@ -301,7 +289,10 @@ class HttpClient {
          // 重试机制
          if (retry > 0) {
             await new Promise((resolve) => setTimeout(resolve, 1000));
-            return this.coreRequest<T>(url, { ...options, retry: retry - 1 });
+            return this.coreRequest<T>(url, {
+               ...options,
+               retry: retry - 1,
+            });
          }
 
          // 错误处理 - 已经通过message显示给用户了，不再抛出未捕获的错误
@@ -412,7 +403,6 @@ class HttpClient {
       if (file instanceof File) {
          formData.append("file", file);
       }
-
       return this.coreRequest<T>(url, {
          ...options,
          method: "POST",
@@ -438,17 +428,14 @@ class HttpClient {
             ...((options?.headers as Record<string, string>) || {}),
          };
          if (token) headers["Authorization"] = `Bearer ${token}`;
-
          const baseURL = getBaseURL();
          const response = await fetch(baseURL + url, {
             method: "GET",
             headers,
          });
-
          if (!response.ok) {
             throw new Error(`Download failed: ${response.statusText}`);
          }
-
          const blob = await response.blob();
          const downloadUrl = window.URL.createObjectURL(blob);
          const link = document.createElement("a");
@@ -458,7 +445,6 @@ class HttpClient {
          link.click();
          document.body.removeChild(link);
          window.URL.revokeObjectURL(downloadUrl);
-
          message.success(t("network:operationSuccess"));
       } catch (error) {
          console.error("Download error:", error);

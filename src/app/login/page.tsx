@@ -4,8 +4,11 @@ import { use, useEffect, useState } from "react";
 
 import { api } from "@/api/api";
 import { loginReq } from "@/types/login";
+import { useTranslation } from "@/i18n/hooks";
 
 export default function Login() {
+   const { t } = useTranslation("common");
+
    const [loginState, setLoginState] = useState({ status: "", message: "" });
 
    const onFinish: FormProps<loginReq>["onFinish"] = (values) => {
@@ -13,7 +16,10 @@ export default function Login() {
          console.log("postLogin data:", data);
          if (data.code === 200) {
             // 登录成功
-            setLoginState({ status: "success", message: "登录成功" });
+            setLoginState({
+               status: "success",
+               message: t("登录成功"),
+            });
          } else {
             // // 登录失败，但不会抛出未捕获错误
             // setLoginState({
@@ -50,12 +56,12 @@ export default function Login() {
                level={1}
                className="!text-[#487BD8] !m-0 !leading-none !ml-5"
             >
-               图书管理系统
+               {t("图书管理系统")}
             </Typography.Title>
          </div>
 
          <Form
-            className="!mt-10 !w-120 !justify-center !items-center rounded-lg !p-10 !shadow-lg bg-white"
+            className=")!mt-10 !w-120 !justify-center !items-center rounded-lg !p-10 !shadow-lg bg-white"
             name="basic"
             layout="vertical"
             initialValues={{ remember: true }}
@@ -64,21 +70,21 @@ export default function Login() {
             autoComplete="off"
          >
             <Form.Item<loginReq>
-               label="账号"
+               label={t("账号")}
                name="username"
-               rules={[{ required: true, message: "请输入账号!" }]}
+               rules={[{ required: true, message: t("请输入账号!") }]}
             >
-               <Input className="!w-full" />
+               <Input className="!w-fullt(" />
             </Form.Item>
 
             <Form.Item<loginReq>
-               label="密码"
+               label={t("密码")}
                name="password"
                validateStatus={loginState.status === "error" ? "error" : ""}
                help={loginState.message}
                rules={[
-                  { required: true, message: "请输入密码!" },
-                  { required: false, min: 6, message: "密码至少6位!" },
+                  { required: true, message: t("请输入密码") },
+                  { required: false, min: 6, message: t("密码至少6位!") },
                ]}
             >
                <Input.Password className="!w-full" />
@@ -90,7 +96,7 @@ export default function Login() {
                   type="primary"
                   htmlType="submit"
                >
-                  登录
+                  {t("登录")}
                </Button>
             </Form.Item>
          </Form>

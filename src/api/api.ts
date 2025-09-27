@@ -1,5 +1,6 @@
-import { http } from "@/http/http";
+import { ApiResponse, http } from "@/http/http";
 import { BookQueryType } from "@/types/book";
+import { loginRes } from "@/types/login";
 
 // 图书相关API
 export const api = {
@@ -42,6 +43,6 @@ export const api = {
 
    //登录
    async login(data: { username: string; password: string }) {
-      return await http.post("/api/login", data);
+      return await http.post<loginRes>("/api/login", data);
    },
 };

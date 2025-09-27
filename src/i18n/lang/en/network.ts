@@ -1,22 +1,19 @@
+// eslint-disable-next-line import/no-anonymous-default-export
 export default {
-  // Request status
-  duplicateRequest: 'Duplicate request, automatically canceled',
-  requestTimeout: 'Request timeout',
-  operationSuccess: 'Operation successful',
-  operationFailed: 'Operation failed',
-  requestCanceled: 'Request canceled',
-  requestSendFailed: 'Failed to send request',
-
-  // HTTP error status
-  unauthorized: 'Unauthorized, please log in again',
-  forbidden: 'Access denied',
-  notFound: 'Requested resource not found',
-  serverError: 'Internal server error',
-  networkError: 'Network error, please try again later',
-  networkConnectionFailed: 'Network connection failed, please check your network',
-
-  // Loading status
-  loadingStart: 'loading start',
-  loadingEnd: 'loading end',
-  loadingText: 'Loading...',
-}
+   duplicateRequest: "Repeat requests, automatically cancel",
+   requestTimeout: "request timeout",
+   operationSuccess: "operation is successful",
+   operationFailed: "Operation failed",
+   requestCanceled: "请求被Cancel",
+   requestSendFailed: "请求发送Failed",
+   unauthorized: "未授权，请重新Login",
+   forbidden: "access denied",
+   notFound: "The requested resource does not exist",
+   serverError: "Internal Server Error",
+   networkError: "Network exception. Please try again later.",
+   networkConnectionFailed:
+      "The network connection failed. Please check the network",
+   loadingStart: "loading start",
+   loadingEnd: "loading end",
+   loadingText: "Loading...",
+};
