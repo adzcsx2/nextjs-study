@@ -13,6 +13,94 @@
 -  🛡️ **格式保护** - 完美保持代码格式，支持 Prettier 兼容
 -  🚀 **多环境部署** - 支持开发、测试、生产环境的自动化部署
 
+## 🌍 i18n 自动化处理系统
+
+### ✨ 核心功能
+- **🎯 智能监听**: 自动检测并处理包含中文的 React 组件文件
+- **🔄 自动转换**: 将中文字符串转换为 `t()` 函数调用
+- **🌍 智能翻译**: 集成腾讯翻译 API，自动生成英文翻译
+- **📁 文件同步**: 中英文翻译文件自动双向同步
+- **🧹 清理优化**: 自动清理未使用的翻译键，保持文件整洁
+
+### 🚀 快速使用
+
+#### 1. 自动监听模式（推荐）
+```bash
+# 开发模式下自动启动 i18n 处理
+npm run dev
+```
+
+#### 2. 手动同步命令
+```bash
+# 手动同步所有翻译文件
+node scripts/i18n-keyboard-listener.js --sync
+
+# 重试失败的翻译
+node scripts/i18n-keyboard-listener.js --retry
+
+# 清理未使用的翻译键
+node scripts/i18n-keyboard-listener.js --cleanup
+```
+
+### 📝 使用示例
+
+**编写代码时直接使用中文：**
+```tsx
+// 输入
+export default function MyButton() {
+  return <button>保存</button>;
+}
+```
+
+**自动转换为：**
+```tsx  
+// 输出
+import { useTranslation } from "@/i18n/hooks";
+
+export default function MyButton() {
+  const { t } = useTranslation("common");
+  return <button>{t("保存")}</button>;
+}
+```
+
+**同时自动生成翻译文件：**
+```typescript
+// zh/common.ts
+export default {
+  "保存": "保存"
+};
+
+// en/common.ts  
+export default {
+  "保存": "Save"  // 自动翻译
+};
+```
+
+### ⚙️ 环境配置
+
+在 `.env.local` 中配置腾讯翻译 API（可选）：
+
+```env
+TENCENT_SECRET_ID=your_secret_id
+TENCENT_SECRET_KEY=your_secret_key
+TENCENT_REGION=ap-beijing
+```
+
+### 🛡️ 注意事项
+
+- ✅ **推荐**: 直接在组件中写中文，让系统自动处理
+- ✅ **支持文件**: `src/` 下的 `.tsx/.ts/.jsx/.js` 文件
+- ❌ **避免**: 手动编辑英文翻译文件（会被覆盖）
+- ❌ **排除**: `i18n/` 目录下的文件不会被转换
+
+### � 详细文档
+
+更多功能详解、配置选项、故障排除等，请查看：
+
+**👉 [完整 i18n 自动化文档](./docs/I18N_AUTOMATION.md)**
+
+---
+
 ## 🏗️ 多环境构建与部署
 
 ### 环境配置
