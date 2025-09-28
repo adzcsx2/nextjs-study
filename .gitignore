@@ -43,3 +43,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#i18n-auto-sync
+/.i18n-cache
+/i18n-auto-sync

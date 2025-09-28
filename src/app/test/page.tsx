@@ -3,11 +3,11 @@ import { useLanguageSwitch } from "@/i18n/hooks";
 import { useLoadingStore } from "@/stores/loading";
 import { http } from "@/http/http";
 import { Button, Divider, Typography } from "antd";
-import { useTranslation } from "react-i18next";
 import TestComponent from "./TestComponent";
 import { useEffect, useState } from "react";
 import { eventBus } from "@/eventbus/eventBus";
 import { env } from "@/config/env";
+import { useTranslation } from "@/i18n/hooks";
 
 const TestPage: React.FC = () => {
   const { t } = useTranslation("common");
@@ -18,6 +18,8 @@ const TestPage: React.FC = () => {
 
   return (
     <div className="m-10">
+      <h1>{t("测试页面")}</h1>
+      <p>{t("这是一个测试")}</p>
       <Button
         type="primary"
         onClick={() => {
@@ -46,7 +48,6 @@ const TestPage: React.FC = () => {
       >
         {t("测试请求")}
       </Button>
-
       <Button
         type="primary"
         className="ml-4"
@@ -92,13 +93,31 @@ const TestPage: React.FC = () => {
           eventBus.emit("testCount", count);
         }}
       >
-        {t("测试eventBus", { count: count })} {count} {t("你好吗")}  t("你好a")
+        {t("测试eventbus")}
       </Button>
-
+      <Button
+        type="primary"
+        className="ml-4"
+        onClick={() => {
+          const a = count + 1;
+          setCount(a);
+          eventBus.emit("testCount", count);
+        }}
+      >
+        {t("测试测试")}
+      </Button>
       <Divider />
       <Typography.Text>{t("hello")}</Typography.Text>
-
+      <p>{t("测试")}</p>
+      <p>{t("测试aaa")}</p>
+      {t("测试")}
       <TestComponent />
+      <p>{t("测试ccc")}</p>
+      {t("测试")}
+      <p>{t("再次测试")}</p>
+      {t("阿萨德")}
+      <p>{t("你好")}</p>
+      <p>{t("阿萨啊啊德123")}</p>
     </div>
   );
 };
