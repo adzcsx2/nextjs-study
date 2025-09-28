@@ -164,6 +164,7 @@ class AutoFileProcessor {
     console.log("  • 处理最近10秒内修改的文件");
     console.log("  • 自动替换中文字符串为 t() 函数");
     console.log("  • 只处理 .tsx, .ts, .jsx, .js 文件");
+    console.log("  • 只监听中文翻译目录，避免循环同步");
     console.log("");
 
     // 立即执行一次
@@ -227,18 +228,26 @@ class AutoFileProcessor {
           const stat = fs.statSync(itemPath);
 
           if (stat.isDirectory()) {
-            // 排除 i18n 文件夹，但允许 i18n/lang/zh
-            if (item === PATH_CONFIG.i18n.langDir && dir.endsWith("i18n")) {
-              // 只监听 i18n/lang/zh 路径的变化，用于同步翻译
-              const i18nLangZhPath = path.join(
-                itemPath,
-                PATH_CONFIG.i18n.zhDir
-              );
-              if (fs.existsSync(i18nLangZhPath)) {
-                searchFiles(i18nLangZhPath);
+            // 特殊处理 i18n 目录结构
+            if (item === "i18n" && !dir.includes("i18n")) {
+              // 如果是 i18n 根目录，只搜索中文目录，避免循环同步
+              const i18nPath = itemPath;
+              const langPath = path.join(i18nPath, PATH_CONFIG.i18n.langDir);
+              const zhPath = path.join(langPath, PATH_CONFIG.i18n.zhDir);
+              if (fs.existsSync(zhPath)) {
+                searchFiles(zhPath);
               }
+            } else if (item === PATH_CONFIG.i18n.langDir && dir.includes("i18n")) {
+              // 如果是 lang 目录，只搜索中文子目录，不搜索英文目录
+              const zhPath = path.join(itemPath, PATH_CONFIG.i18n.zhDir);
+              if (fs.existsSync(zhPath)) {
+                searchFiles(zhPath);
+              }
+            } else if (dir.includes("i18n") && dir.includes("lang") && dir.includes("zh")) {
+              // 如果已经在 i18n/lang/zh 目录下，继续搜索子目录
+              searchFiles(itemPath);
             } else if (!PathUtils.shouldExcludeDir(item) && item !== "i18n") {
-              // 递归搜索其他子目录
+              // 递归搜索其他子目录（非i18n目录）
               searchFiles(itemPath);
             }
           } else if (stat.isFile()) {
@@ -284,8 +293,15 @@ class AutoFileProcessor {
       const lastModified = stats.mtime.getTime();
       const lastProcessed = this.lastProcessTime.get(filePath) || 0;
 
-      // 如果文件在上次处理后没有修改，跳过
-      if (lastModified <= lastProcessed) {
+      // 对于中文翻译文件，只要在最近10秒内修改过就处理，不依赖上次处理时间
+      // 对于其他文件，如果文件在上次处理后没有修改，跳过
+      if (!isZhTranslationFile && lastModified <= lastProcessed) {
+        return;
+      }
+
+      // 对于中文翻译文件，确保是最近10秒内修改的
+      const tenSecondsAgo = Date.now() - 10 * 1000;
+      if (isZhTranslationFile && lastModified <= tenSecondsAgo) {
         return;
       }
 
@@ -296,6 +312,7 @@ class AutoFileProcessor {
       // 如果是中文翻译文件，只进行同步，不进行 t() 转换
       if (isZhTranslationFile) {
         console.log(`📝 检测到中文翻译文件变化，开始同步到英文文件...`);
+        console.log(`💡 只监听中文目录变化，避免英文文件变化造成的循环同步`);
 
         // 获取文件名
         const filename = path.basename(filePath);

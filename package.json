@@ -3,15 +3,15 @@
    "version": "0.1.0",
    "private": true,
    "scripts": {
-      "dev": "npm run i18n  --cleanup && concurrently \"npx next dev --turbopack\" i18n",
-      "build": "npm run i18n  --cleanup && npx next build --turbopack",
+      "dev": "npm run i18n_clean && concurrently \"npx next dev --turbopack\" \"node scripts/i18n-keyboard-listener.js\"",
+      "build": "npm run i18n_clean && npx next build --turbopack",
       "build:test": "dotenv -e .env.test -- npm run build",
       "build:production": "dotenv -e .env.production -- npm run build",
       "start": "npx next start",
       "start:test": "dotenv -e .env.test -- npx next start",
       "start:production": "dotenv -e .env.production -- npx next start",
       "lint": "eslint",
-      "i18n": "node scripts/i18n-keyboard-listener.js"
+      "i18n_clean": "node scripts/i18n-keyboard-listener.js --cleanup"
    },
    "dependencies": {
       "@ant-design/icons": "^5.6.1",

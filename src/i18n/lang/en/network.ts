@@ -12,7 +12,6 @@
    "loadingStart": "loading start",
    "loadingEnd": "loading end",
    "loadingText": "Loading...",
-   "loadingText2": "Loading...",
    "requestCanceled": "Request canceled",
    "requestSendFailed": "Request sent failed",
    "unauthorized": "Not authorized, please log in again",

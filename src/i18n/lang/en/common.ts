@@ -12,5 +12,12 @@
    "显示loading": "Display loading",
    "取消loading": "Cancel loading",
    "中文": "Chinese",
-   "bbb - 测试环境日志": "bbb -Test Environment Log",
+   "hello": "Hello",
+   "环境信息:": "Environmental information:",
+   "环境信息2:": "Environmental information:",
+   "测试eventBus": "Test eventBus {{count}}",
+   "你好吗": "how are you",
+   "你好a": "Hello a",
+   "jia-zai-zhong": "Loading",
+   "加载中...": "Loading...",
 };

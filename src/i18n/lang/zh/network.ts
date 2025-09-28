@@ -20,5 +20,4 @@ export default {
   loadingStart: "loading start",
   loadingEnd: "loading end",
   loadingText: "加载中...",
-  loadingText2: "加载中...",
 };

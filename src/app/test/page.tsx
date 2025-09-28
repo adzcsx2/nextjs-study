@@ -68,7 +68,6 @@ const TestPage: React.FC = () => {
         className="ml-4"
         onClick={() => {
           // 使用多种输出方式确保能看到日志
-          console.log("bbb - 测试环境日志");
           console.info(t("环境信息:"), {
             NODE_ENV: env.node_env,
             ENV_NAME: env.envName,
@@ -93,7 +92,7 @@ const TestPage: React.FC = () => {
           eventBus.emit("testCount", count);
         }}
       >
-        {t("测试eventBus {count}")}
+        {t("测试eventBus", { count: count })} {count} {t("你好吗")}  t("你好a")
       </Button>
 
       <Divider />

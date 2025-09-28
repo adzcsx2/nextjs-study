@@ -14,8 +14,11 @@ export default {
    "中文": "中文",
 
    "hello": "你好",
-   "测试eventBus {count}": "测试eventBus {count}",
-
+   "测试eventBus": "测试eventBus {{count}}",
    "环境信息:": "环境信息:",
-   "bbb - 测试环境日志": "bbb - 测试环境日志",
+   "环境信息2:": "环境信息:",
+   "你好吗": "你好吗",
+   "你好a": "你好a",
+   "jia-zai-zhong": "加载中",
+   "加载中...": "加载中...",
 };
