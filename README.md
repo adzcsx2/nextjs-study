@@ -1,45 +1,70 @@
 # Next.js 智能 i18n 自动化项目
 
-一个 Next.js 练手项目，支持国际化多语言自动转换：自动将页面中的中文字符串转换为 i18n 的 t() 函数调用，并自动生成对应的中英文翻译键值对。让你只需专注于页面开发，i18n 国际化完全自动处理！
+一个 Next.js 练手项目，集成了 [i18n-auto-sync](https://github.com/adzcsx2/i18n-auto-sync) VS Code 插件，实现国际化多语言自动转换：自动将页面中的中文字符串转换为 i18n 的 t() 函数调用，并自动生成对应的中英文翻译键值对。让你只需专注于页面开发，i18n 国际化完全自动处理！
 
 ## ✨ 核心特性
 
 -  🎯 **智能字符串转换** - 自动将 JSX 中的中文字符串转换为 `t("key")` 格式
 -  🔄 **自动键值对生成** - 自动在中文翻译文件中添加对应的键值对
 -  🌍 **实时英文翻译** - 腾讯翻译 API 自动生成英文翻译并同步
--  📁 **10 秒智能监控** - 每 10 秒自动检测文件变化并处理
--  🧹 **自动清理优化** - 启动时自动清理未使用的翻译键，保持文件整洁
--  ⚡ **并发处理机制** - 智能批量处理，支持重试和错误恢复
+-  � **VS Code 插件驱动** - 基于 VS Code 插件，提供更好的开发体验
+-  🧹 **自动清理优化** - 自动清理未使用的翻译键，保持文件整洁
+-  ⚡ **实时处理机制** - 保存文件时自动处理，支持手动触发
 -  🛡️ **格式保护** - 完美保持代码格式，支持 Prettier 兼容
 -  🚀 **多环境部署** - 支持开发、测试、生产环境的自动化部署
 
 ## 🌍 i18n 自动化处理系统
 
+本项目集成了 [i18n-auto-sync](https://github.com/adzcsx2/i18n-auto-sync) VS Code 插件，提供智能化的国际化处理方案。
+
 ### ✨ 核心功能
-- **🎯 智能监听**: 自动检测并处理包含中文的 React 组件文件
+- **🎯 智能监听**: VS Code 插件自动检测并处理包含中文的 React 组件文件
 - **🔄 自动转换**: 将中文字符串转换为 `t()` 函数调用
-- **🌍 智能翻译**: 集成腾讯翻译 API，自动生成英文翻译
+- **📝 自动导入**: 自动添加 `import { useTranslation } from "@/i18n/hooks"`
+- **🎯 自动调用**: 自动添加 `const { t } = useTranslation()`
 - **📁 文件同步**: 中英文翻译文件自动双向同步
+- **🌍 智能翻译**: 集成腾讯云 API，自动生成英文翻译
 - **🧹 清理优化**: 自动清理未使用的翻译键，保持文件整洁
 
 ### 🚀 快速使用
 
-#### 1. 自动监听模式（推荐）
+#### 1. 安装 VS Code 插件
+1. 下载插件：从 [GitHub Release](https://github.com/adzcsx2/i18n-auto-sync/releases) 下载 `i18n-auto-sync-0.1.0.vsix` 文件
+2. 安装插件：在 VS Code 中按 `Ctrl+Shift+P`，输入 `Extensions: Install from VSIX...`，选择下载的 `.vsix` 文件
+3. 配置项目：确保项目具备正确的目录结构（见下方结构要求）
+
+#### 2. 使用方式
 ```bash
-# 开发模式下自动启动 i18n 处理
-npm run dev
+# 自动模式
+# 保存文件时自动转换中文字符串
+
+# 手动模式快捷键（推荐）
+Ctrl+Shift+I     # 处理当前文件
+Ctrl+Shift+R     # 重命名翻译键
+Ctrl+Alt+S       # 保存并处理
 ```
 
-#### 2. 手动同步命令
-```bash
-# 手动同步所有翻译文件
-node scripts/i18n-keyboard-listener.js --sync
+#### 3. 插件配置
+在 VS Code 设置中搜索 `i18n-auto-sync`，可配置：
+- **触发模式**: 自动保存模式 / 手动模式
+- **翻译文件路径**: 自定义翻译文件位置
+- **目标目录过滤**: 指定需要处理的目录
+- **腾讯云翻译**: 配置自动英文翻译（可选）
 
-# 重试失败的翻译
-node scripts/i18n-keyboard-listener.js --retry
-
-# 清理未使用的翻译键
-node scripts/i18n-keyboard-listener.js --cleanup
+#### 4. 项目结构要求
+```
+your-project/
+├── src/
+│   ├── i18n/
+│   │   ├── hooks.ts          # useTranslation hook
+│   │   └── lang/
+│   │       ├── zh/
+│   │       │   └── common.ts # 中文翻译文件
+│   │       └── en/
+│   │           └── common.ts # 英文翻译文件
+│   ├── components/           # 你的组件
+│   └── ...
+└── ...
 ```
 
 ### 📝 使用示例
@@ -47,57 +72,95 @@ node scripts/i18n-keyboard-listener.js --cleanup
 **编写代码时直接使用中文：**
 ```tsx
 // 输入
-export default function MyButton() {
-  return <button>保存</button>;
+export default function LoginPage() {
+  return (
+    <Form.Item
+      label="用户名"
+      name="username"
+      rules={[{ required: true, message: "请输入用户名" }]}
+    >
+      <Input placeholder="请输入用户名" />
+    </Form.Item>
+  );
 }
 ```
 
-**自动转换为：**
+**保存文件后自动转换为：**
 ```tsx  
 // 输出
 import { useTranslation } from "@/i18n/hooks";
 
-export default function MyButton() {
+export default function LoginPage() {
   const { t } = useTranslation("common");
-  return <button>{t("保存")}</button>;
+  return (
+    <Form.Item
+      label={t("用户名")}
+      name="username"
+      rules={[{ required: true, message: t("请输入用户名") }]}
+    >
+      <Input placeholder={t("请输入用户名")} />
+    </Form.Item>
+  );
 }
 ```
 
 **同时自动生成翻译文件：**
 ```typescript
-// zh/common.ts
+// src/i18n/lang/zh/common.ts
 export default {
-  "保存": "保存"
+  "用户名": "用户名",
+  "请输入用户名": "请输入用户名"
 };
 
-// en/common.ts  
+// src/i18n/lang/en/common.ts  
 export default {
-  "保存": "Save"  // 自动翻译
+  "用户名": "Username",
+  "请输入用户名": "Please enter username"  // 自动翻译
 };
 ```
 
-### ⚙️ 环境配置
+### ⚙️ 高级配置
 
-在 `.env.local` 中配置腾讯翻译 API（可选）：
-
-```env
-TENCENT_SECRET_ID=your_secret_id
-TENCENT_SECRET_KEY=your_secret_key
-TENCENT_REGION=ap-beijing
+VS Code 插件设置示例：
+```json
+{
+  "i18n-auto-sync.triggerMode": "auto-save",
+  "i18n-auto-sync.langRootDir": "src/",
+  "i18n-auto-sync.activeDirectories": "src/app/*,src/components/*",
+  "i18n-auto-sync.autoTranslate": true,
+  "i18n-auto-sync.tencentSecretId": "your_secret_id",
+  "i18n-auto-sync.tencentSecretKey": "your_secret_key"
+}
 ```
 
 ### 🛡️ 注意事项
 
-- ✅ **推荐**: 直接在组件中写中文，让系统自动处理
+- ✅ **推荐**: 直接在组件中写中文，让插件自动处理
 - ✅ **支持文件**: `src/` 下的 `.tsx/.ts/.jsx/.js` 文件
-- ❌ **避免**: 手动编辑英文翻译文件（会被覆盖）
+- ✅ **智能过滤**: 只处理包含中文字符的字符串，纯英文不会被转换
+- ❌ **避免**: 手动编辑英文翻译文件（会被自动覆盖）
 - ❌ **排除**: `i18n/` 目录下的文件不会被转换
 
-### � 详细文档
+### 🔧 常见问题
 
-更多功能详解、配置选项、故障排除等，请查看：
+**Q: 插件没有自动处理中文字符串？**
+- 检查 VS Code 设置中的 `i18n-auto-sync.triggerMode`
+- 确保 `activeDirectories` 包含当前文件目录
+- 验证项目目录结构是否正确
 
-**👉 [完整 i18n 自动化文档](./docs/I18N_AUTOMATION.md)**
+**Q: 英文字符串没有被转换？**
+- 这是设计如此，插件只处理包含中文字符的字符串
+
+**Q: 翻译文件没有生成？**
+- 检查 `langRootDir` 路径设置
+- 确保有 `src/i18n/lang/` 目录结构
+- 验证 VS Code 写入权限
+
+### 📚 详细文档
+
+- **插件仓库**: [https://github.com/adzcsx2/i18n-auto-sync](https://github.com/adzcsx2/i18n-auto-sync)
+- **使用指南**: 查看插件 README 获取完整使用说明
+- **问题反馈**: 在 GitHub 仓库提交 Issue
 
 ---
 
