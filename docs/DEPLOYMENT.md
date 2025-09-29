@@ -126,12 +126,7 @@ tar -xzf deployment.tar.gz
 # 安装依赖
 npm ci --production
 
-# 复制环境配置
-cp .env.test .env.local     # 测试版
-# 或
-cp .env.production .env.local # 生产版
-
-# 启动服务
+# 启动服务（直接使用对应环境的配置文件）
 pm2 start ecosystem.config.json --only app-test        # 测试版
 # 或
 pm2 start ecosystem.config.json --only app-production  # 生产版
@@ -259,7 +254,7 @@ sudo systemctl restart nginx
    ```
 
 3. **环境变量未生效**
-   -  确认 `.env.local` 文件是否存在且配置正确
+   -  确认对应环境的配置文件（`.env.test` 或 `.env.production`）是否存在且配置正确
    -  重启 PM2 进程
    ```bash
    pm2 restart book-system-production

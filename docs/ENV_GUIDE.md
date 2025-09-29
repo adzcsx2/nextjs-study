@@ -41,14 +41,6 @@
 
 -  `PORT`: 应用运行端口，默认 3000
 
-### 腾讯云翻译配置
-
-用于自动 i18n 翻译功能：
-
--  `TENCENT_SECRET_ID`: 腾讯云 SecretId
--  `TENCENT_SECRET_KEY`: 腾讯云 SecretKey
--  `TENCENT_REGION`: 服务区域，建议 ap-beijing
-
 ## 🌍 多环境配置
 
 项目支持多环境配置：
@@ -143,11 +135,3 @@ if (env.debug) {
 ### 客户端无法访问
 
 如果在客户端组件中无法获取环境变量，确保变量名以 `NEXT_PUBLIC_` 开头
-
-### 腾讯翻译不工作
-
-```bash
-⚠️ 腾讯云翻译配置未完整，自动翻译功能将不可用
-```
-
-**解决方案**: 配置正确的 `TENCENT_SECRET_ID` 和 `TENCENT_SECRET_KEY`
