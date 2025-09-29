@@ -5,31 +5,29 @@ import { use, useEffect, useState } from "react";
 import { api } from "@/api/api";
 import { loginReq } from "@/types/login";
 import { useTranslation } from "@/i18n/hooks";
+import { useUserStore } from "@/stores/userStore";
+import { Path } from "@/router/path";
+import { useRouter } from "next/navigation";
+import { LoginRes } from "@/types";
 
 export default function Login() {
   const { t } = useTranslation("common");
 
   const [loginState, setLoginState] = useState({ status: "", message: "" });
 
+  const userStore = useUserStore();
+  const router = useRouter();
   const onFinish: FormProps<loginReq>["onFinish"] = (values) => {
-    api.login(values).then((data) => {
-      console.log("postLogin data:", data);
-      if (data.code === 200) {
-        // 登录成功
-        setLoginState({
-          status: "success",
-          message: t("登录成功"),
-        });
-      } else {
-        // // 登录失败，但不会抛出未捕获错误
-        // setLoginState({
-        //    status: "error",
-        //    message: data.message || {t("登录失败")},
-        // });
-      }
-    });
-
-    console.log("Success:", values);
+    api
+      .login({ name: values.username, password: values.password }, true)
+      .then((data) => {
+        // 后端会通过 Set-Cookie 头自动设置 HttpOnly Cookie
+        // 前端不需要手动存储 token
+        console.log("postLogin success:", data);
+        // 登录成功后跳转到主页或其他页面
+        userStore.setUser(data as LoginRes);
+        router.push(Path.HOME);
+      });
   };
 
   const onFinishFailed: FormProps<loginReq>["onFinishFailed"] = (errorInfo) => {
@@ -53,7 +51,9 @@ export default function Login() {
         <Typography.Title
           level={1}
           className="!text-[#487BD8] !m-0 !leading-none !ml-5"
-        >{t("图书管理系统")}</Typography.Title>
+        >
+          {t("图书管理系统")}
+        </Typography.Title>
       </div>
 
       <Form
@@ -74,20 +74,20 @@ export default function Login() {
         </Form.Item>
 
         <Form.Item<loginReq>
-          label= {t("密码")}
+          label={t("密码")}
           name="password"
-          validateStatus={loginState.status === "error" ? "error" : ""}
-          help={loginState.message}
           rules={[
             { required: true, message: t("请输入密码") },
-            { required: false, min: 6, message: t("密码至少6位") },
+            { min: 6, message: t("密码至少6位") },
           ]}
         >
           <Input.Password className="!w-full" />
         </Form.Item>
 
         <Form.Item label={null}>
-          <Button className="!w-full mt-5" type="primary" htmlType="submit">{t("登录")}</Button>
+          <Button className="!w-full mt-5" type="primary" htmlType="submit">
+            {t("登录")}
+          </Button>
         </Form.Item>
       </Form>
     </main>

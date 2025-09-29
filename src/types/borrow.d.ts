@@ -1,7 +1,7 @@
 import { BORROW_STATUS } from "@/constants";
 
 import { BookType } from "./book";
-import { UserType } from "./user";
+import { LoginReq } from "./user";
 
 export interface BorrowQueryType {
   current: number;
@@ -21,7 +21,7 @@ export interface BorrowOptionType {
 export interface BorrowType {
   _id?: string;
   book: BookType;
-  user: UserType;
+  user: LoginReq;
   status: BORROW_STATUS;
 }
 

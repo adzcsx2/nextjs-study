@@ -1,25 +1,73 @@
 import { message } from "antd";
 import i18n from "@/i18n";
 import { env } from "@/config/env";
+import { Path } from "@/router/path";
 
 // ==================== 配置常量 ====================
 // 动态获取基础URL的函数
 const getBaseURL = () => {
-  console.log("Base API URL:", env.baseAPI);
+  if (process.env.NODE_ENV === "development") {
+    console.log("Base API URL:", env.baseAPI);
+  }
   return env.baseAPI;
 };
 const TIMEOUT = 15000;
 const t = i18n.t.bind(i18n);
 
+// 日志工具
+const logger = {
+  request: (url: string, options: RequestOptions) => {
+    if (process.env.NODE_ENV === "development") {
+      console.group(`🚀 HTTP ${options.method || "GET"} ${url}`);
+      console.log("Options:", options);
+      console.groupEnd();
+    }
+  },
+  response: (url: string, data: unknown, duration: number) => {
+    if (process.env.NODE_ENV === "development") {
+      console.group(`✅ HTTP Response ${url} (${duration}ms)`);
+      console.log("Data:", data);
+      console.groupEnd();
+    }
+  },
+  error: (url: string, error: unknown, duration: number) => {
+    if (process.env.NODE_ENV === "development") {
+      console.group(`❌ HTTP Error ${url} (${duration}ms)`);
+      console.error("Error:", error);
+      console.groupEnd();
+    }
+  },
+};
+
 // ==================== 类型定义 ====================
-interface RequestOptions extends RequestInit {
+// 缓存配置
+interface CacheConfig {
+  ttl?: number; // 缓存时间（毫秒），默认5分钟
+  key?: string; // 自定义缓存键，默认使用URL+参数
+  strategy?: "cache-first" | "network-first"; // 缓存策略，默认cache-first
+}
+
+// 缓存项
+interface CacheItem<T = unknown> {
+  data: T;
+  timestamp: number;
+  ttl: number;
+  key: string;
+}
+
+interface RequestOptions extends Omit<RequestInit, "cache"> {
   preventDuplicate?: boolean;
   showLoading?: boolean;
   showSuccess?: boolean;
   needToken?: boolean;
   retry?: number;
   params?: Record<string, string | number | boolean | null | undefined>;
+  throwError?: boolean; // 是否抛出错误供.catch()捕获，默认false
+  timeout?: number; // 自定义超时时间
+  validateStatus?: (status: number) => boolean; // 自定义状态码验证
+  enableCache?: boolean | CacheConfig; // 缓存配置
 }
+
 interface LoadingConfig {
   type: "antd" | "store" | "event" | "none";
   antdOptions?: {
@@ -35,10 +83,22 @@ interface ApiResponse<T = unknown> {
   data: T;
 }
 
+// 扩展的错误接口（用于类型安全）
+interface ExtendedError extends Error {
+  code?: number;
+  response?: unknown;
+  type?: string;
+  originalError?: unknown;
+}
+
 // ==================== 全局状态 ====================
 const pendingRequests = new Map<string, AbortController>();
+const requestCache = new Map<string, CacheItem>();
 let loadingInstance: (() => void) | null = null;
 let loadingCount = 0;
+
+// 默认缓存配置
+const DEFAULT_CACHE_TTL = 5 * 60 * 1000; // 5分钟
 const defaultLoadingConfig: LoadingConfig = {
   type: "antd",
   antdOptions: {
@@ -87,6 +147,60 @@ const cancelPendingRequest = (key: string) => {
     controller.abort(t("network:duplicateRequest"));
     pendingRequests.delete(key);
   }
+};
+
+// ==================== 缓存管理 ====================
+const generateCacheKey = (
+  url: string,
+  method: string,
+  params?: Record<string, unknown>,
+  body?: unknown,
+  customKey?: string
+): string => {
+  if (customKey) return customKey;
+  return `${method}:${url}:${JSON.stringify(params || {})}:${JSON.stringify(
+    body || {}
+  )}`;
+};
+
+const getCachedData = <T>(cacheKey: string): T | null => {
+  const cached = requestCache.get(cacheKey);
+  if (!cached) return null;
+
+  // 检查是否过期
+  if (Date.now() > cached.timestamp + cached.ttl) {
+    requestCache.delete(cacheKey);
+    return null;
+  }
+
+  return cached.data as T;
+};
+
+const setCachedData = <T>(
+  cacheKey: string,
+  data: T,
+  ttl: number = DEFAULT_CACHE_TTL
+): void => {
+  const cacheItem: CacheItem<T> = {
+    data,
+    timestamp: Date.now(),
+    ttl,
+    key: cacheKey,
+  };
+  requestCache.set(cacheKey, cacheItem);
+};
+
+const clearExpiredCache = (): void => {
+  const now = Date.now();
+  for (const [key, item] of requestCache.entries()) {
+    if (now > item.timestamp + item.ttl) {
+      requestCache.delete(key);
+    }
+  }
+};
+
+const clearAllCache = (): void => {
+  requestCache.clear();
 };
 
 // ==================== Loading 管理 ====================
@@ -151,8 +265,9 @@ const handleErrorResponse = async (response: Response) => {
   };
   message.error(errorMessages[response.status] || t("network:networkError"));
   if (response.status === 401) {
-    localStorage.removeItem("token");
-    window.location.href = "/login";
+    // HttpOnly Cookie 会由后端自动清理（过期或删除）
+    // 前端只需要跳转到登录页
+    window.location.href = Path.LOGIN;
   }
 };
 const handleError = (error: unknown) => {
@@ -169,12 +284,12 @@ const handleError = (error: unknown) => {
 // ==================== Http 客户端类 ====================
 class HttpClient {
   /**
-   * 通用请求方法
+   * 通用请求方法 - 支持可选的错误抛出
    */
   private async coreRequest<T = unknown>(
     url: string,
     options: RequestOptions = {}
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T | null> {
     // 解构配置
     const {
       method = "GET",
@@ -183,10 +298,25 @@ class HttpClient {
       showSuccess = false,
       needToken = true,
       retry = 0,
+      throwError = false,
+      timeout = TIMEOUT,
+      validateStatus = (status: number) =>
+        (status >= 200 && status < 300) || status === 304,
+      enableCache = false,
       params,
       headers: customHeaders,
       ...restOptions
     } = options;
+
+    // 处理缓存配置
+    const cacheConfig: CacheConfig | null = enableCache
+      ? typeof enableCache === "boolean"
+        ? { ttl: DEFAULT_CACHE_TTL, strategy: "cache-first" }
+        : { ttl: DEFAULT_CACHE_TTL, strategy: "cache-first", ...enableCache }
+      : null;
+
+    // 判断是否应该缓存（GET和POST都支持）
+    const shouldCache = cacheConfig && (method === "GET" || method === "POST");
 
     // 初始化
     const controller = new AbortController();
@@ -196,16 +326,41 @@ class HttpClient {
     const baseURL = getBaseURL();
     const requestUrl = buildUrlWithParam(baseURL + url, params);
 
+    // 缓存处理（对GET和POST请求启用缓存）
+    if (shouldCache) {
+      const cacheKey = generateCacheKey(
+        url,
+        method,
+        params,
+        restOptions.body,
+        cacheConfig.key
+      );
+
+      // 检查缓存
+      const cachedData = getCachedData<T>(cacheKey);
+      if (cachedData !== null) {
+        logger.response(requestUrl, cachedData, 0);
+        if (process.env.NODE_ENV === "development") {
+          console.log("🎯 Cache hit:", cacheKey);
+        }
+        return cachedData;
+      }
+    }
+
     // 构建请求头
     const headers: Record<string, string> = {
-      "Content-Type": "application/json;charset=utf-8",
+      "Content-Type": "application/json",
     };
     if (customHeaders) {
       Object.assign(headers, customHeaders);
     }
+    // HttpOnly Cookie 模式下不需要手动设置 Authorization 头
+    // Cookie 会自动包含在请求中
     if (needToken) {
-      const token = localStorage.getItem("token");
-      if (token) headers["Authorization"] = `Bearer ${token}`;
+      // 可以添加一些调试日志
+      if (process.env.NODE_ENV === "development") {
+        console.log("🔐 Using HttpOnly Cookie for authentication");
+      }
     }
 
     // 重复请求处理
@@ -217,29 +372,61 @@ class HttpClient {
     // 显示loading
     if (needLoading) showLoading();
 
+    // 记录请求开始
+    const startTime = Date.now();
+    logger.request(requestUrl, { method, ...options });
+
     // 设置超时
     const timeoutId = setTimeout(() => {
-      controller.abort(t("network:requestTimeout"));
-    }, TIMEOUT);
+      if (!controller.signal.aborted) {
+        controller.abort(t("network:requestTimeout"));
+      }
+    }, timeout);
     const cleanup = () => {
       clearTimeout(timeoutId);
       removePendingRequest(reqKey);
       if (needLoading) hideLoading();
     };
+
     try {
       // 发送请求
       const response = await fetch(requestUrl, {
         method,
         headers,
         signal: controller.signal,
+        credentials: "include", // 包含 HttpOnly Cookie
         ...restOptions,
       });
       cleanup();
 
       // 检查响应状态
-      if (!response.ok) {
+      if (!validateStatus(response.status)) {
         await handleErrorResponse(response);
         throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // 处理304 Not Modified状态
+      if (response.status === 304) {
+        // 304状态码表示资源未修改，应该使用缓存
+        if (shouldCache) {
+          const cacheKey = generateCacheKey(
+            url,
+            method,
+            params,
+            restOptions.body,
+            cacheConfig.key
+          );
+          const cachedData = getCachedData<T>(cacheKey);
+          if (cachedData !== null) {
+            logger.response(requestUrl, cachedData, Date.now() - startTime);
+            if (process.env.NODE_ENV === "development") {
+              console.log("🔄 304 Not Modified - Using cache:", cacheKey);
+            }
+            return cachedData;
+          }
+        }
+        // 如果没有缓存，304状态码可能是错误的
+        throw new Error("304 Not Modified but no cache available");
       }
 
       // 解析响应
@@ -258,26 +445,58 @@ class HttpClient {
         if (showSuccess) {
           message.success(data.message || t("network:operationSuccess"));
         }
-        return data.data;
+
+        // 缓存成功的响应数据
+        if (shouldCache) {
+          const cacheKey = generateCacheKey(
+            url,
+            method,
+            params,
+            restOptions.body,
+            cacheConfig.key
+          );
+          setCachedData(cacheKey, data.data, cacheConfig.ttl);
+          if (process.env.NODE_ENV === "development") {
+            console.log("💾 Data cached:", cacheKey);
+          }
+        }
+
+        logger.response(requestUrl, data.data, Date.now() - startTime);
+        return data.data; // 成功时直接返回 data
       } else {
         message.error(data.message || t("network:operationFailed"));
-        // 不抛出错误，直接返回错误数据，让调用方自行判断
-        return data.data;
+        logger.error(requestUrl, data, Date.now() - startTime);
+        // 根据配置决定是否抛出错误
+        if (throwError) {
+          const error = new Error(
+            data.message || t("network:operationFailed")
+          ) as ExtendedError;
+          error.code = data.code;
+          error.response = data;
+          throw error;
+        }
+        // 默认情况下返回 null，表示操作失败但已处理
+        return null as unknown as T;
       }
     } catch (error: unknown) {
       cleanup();
       const err = error as Error;
-      // 重复请求不需要处理
+
+      // 重复请求处理
       if (
         err?.name === "AbortError" &&
         err.message?.includes(t("network:duplicateRequest"))
       ) {
-        // 静默处理，返回错误结构
-        return {
-          code: -1,
-          message: err.message || t("network:duplicateRequest"),
-          data: null,
-        } as ApiResponse<T>;
+        if (throwError) {
+          const duplicateError = new Error(
+            err.message || t("network:duplicateRequest")
+          ) as ExtendedError;
+          duplicateError.code = -1;
+          duplicateError.type = "duplicate";
+          throw duplicateError;
+        }
+        // 默认情况下静默处理重复请求
+        return null as unknown as T;
       }
 
       // 重试机制
@@ -289,32 +508,34 @@ class HttpClient {
         });
       }
 
-      // 错误处理 - 已经通过message显示给用户了，不再抛出未捕获的错误
+      // 错误处理 - 显示错误消息
       handleError(error);
-      // 返回错误结构而不是reject，避免未捕获的Promise错误
-      return {
-        code: -1,
-        message: err?.message || t("network:requestSendFailed"),
-        data: null,
-      } as ApiResponse<T>;
+      logger.error(requestUrl, error, Date.now() - startTime);
+      if (throwError) {
+        const finalError = new Error(
+          err?.message || t("network:requestSendFailed")
+        ) as ExtendedError;
+        finalError.code = -1;
+        finalError.originalError = error;
+        throw finalError;
+      }
+      // 默认情况下返回 null，表示请求失败但已处理
+      return null as unknown as T;
     }
   }
 
   /**
-   * GET 请求
+   * GET 请求 - 与POST请求使用相同的参数格式
    */
   async get<T = unknown>(
     url: string,
-    params?: Record<string, string | number | boolean | null | undefined>,
-    options?: Omit<RequestOptions, "method" | "params">,
-    isShowLoading: boolean = true
-  ): Promise<ApiResponse<T>> {
-    console.log(isShowLoading);
+    data?: Record<string, string | number | boolean | null | undefined> | null,
+    options?: Omit<RequestOptions, "method" | "params">
+  ): Promise<T | null> {
     return this.coreRequest<T>(url, {
       ...options,
       method: "GET",
-      params,
-      showLoading: isShowLoading,
+      params: data || undefined,
     });
   }
 
@@ -324,14 +545,12 @@ class HttpClient {
   async post<T = unknown>(
     url: string,
     data?: unknown,
-    options?: Omit<RequestOptions, "method" | "body">,
-    isShowLoading: boolean = true
-  ): Promise<ApiResponse<T>> {
+    options?: Omit<RequestOptions, "method" | "body">
+  ): Promise<T | null> {
     return this.coreRequest<T>(url, {
       ...options,
       method: "POST",
       body: data ? JSON.stringify(data) : undefined,
-      showLoading: isShowLoading,
     });
   }
 
@@ -341,14 +560,12 @@ class HttpClient {
   async put<T = unknown>(
     url: string,
     data?: unknown,
-    options?: Omit<RequestOptions, "method" | "body">,
-    isShowLoading: boolean = true
-  ): Promise<ApiResponse<T>> {
+    options?: Omit<RequestOptions, "method" | "body">
+  ): Promise<T | null> {
     return this.coreRequest<T>(url, {
       ...options,
       method: "PUT",
       body: data ? JSON.stringify(data) : undefined,
-      showLoading: isShowLoading,
     });
   }
 
@@ -357,13 +574,11 @@ class HttpClient {
    */
   async delete<T = unknown>(
     url: string,
-    options?: Omit<RequestOptions, "method">,
-    isShowLoading: boolean = true
-  ): Promise<ApiResponse<T>> {
+    options?: Omit<RequestOptions, "method">
+  ): Promise<T | null> {
     return this.coreRequest<T>(url, {
       ...options,
       method: "DELETE",
-      showLoading: isShowLoading,
     });
   }
 
@@ -373,14 +588,12 @@ class HttpClient {
   async patch<T = unknown>(
     url: string,
     data?: unknown,
-    options?: Omit<RequestOptions, "method" | "body">,
-    isShowLoading: boolean = true
-  ): Promise<ApiResponse<T>> {
+    options?: Omit<RequestOptions, "method" | "body">
+  ): Promise<T | null> {
     return this.coreRequest<T>(url, {
       ...options,
       method: "PATCH",
       body: data ? JSON.stringify(data) : undefined,
-      showLoading: isShowLoading,
     });
   }
 
@@ -390,9 +603,8 @@ class HttpClient {
   async upload<T = unknown>(
     url: string,
     file: File | FormData,
-    options?: Omit<RequestOptions, "method" | "body" | "headers">,
-    isShowLoading: boolean = true
-  ): Promise<ApiResponse<T>> {
+    options?: Omit<RequestOptions, "method" | "body" | "headers">
+  ): Promise<T | null> {
     const formData = file instanceof FormData ? file : new FormData();
     if (file instanceof File) {
       formData.append("file", file);
@@ -404,7 +616,6 @@ class HttpClient {
       headers: {
         // 不设置 Content-Type，让浏览器自动设置
       },
-      showLoading: isShowLoading,
     });
   }
 
@@ -455,5 +666,24 @@ export const setLoadingConfig = (config: Partial<LoadingConfig>) => {
   Object.assign(defaultLoadingConfig, config);
 };
 
+// 导出缓存管理函数
+export const cacheManager = {
+  // 清理过期缓存
+  clearExpired: clearExpiredCache,
+  // 清理所有缓存
+  clearAll: clearAllCache,
+  // 获取缓存统计信息
+  getStats: () => ({
+    total: requestCache.size,
+    keys: Array.from(requestCache.keys()),
+  }),
+  // 手动设置缓存
+  set: setCachedData,
+  // 手动获取缓存
+  get: getCachedData,
+  // 删除特定缓存
+  delete: (key: string) => requestCache.delete(key),
+};
+
 // 导出类型
-export type { RequestOptions, LoadingConfig, ApiResponse };
+export type { RequestOptions, LoadingConfig, ApiResponse, CacheConfig };
