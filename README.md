@@ -2,6 +2,59 @@
 
 一个 Next.js 练手项目，集成了 [i18n-auto-sync](https://github.com/adzcsx2/i18n-auto-sync) VS Code 插件，实现国际化多语言自动转换：自动将页面中的中文字符串转换为 i18n 的 t() 函数调用，并自动生成对应的中英文翻译键值对。让你只需专注于页面开发，i18n 国际化完全自动处理！
 
+## 🚀 快速开始
+
+### 1. 克隆项目
+
+```bash
+git clone https://github.com/adzcsx2/nextjs-study.git
+cd nextjs-study/next_app
+```
+
+### 2. 安装依赖
+
+```bash
+npm install
+```
+
+### 3. 环境配置
+
+复制环境配置示例文件并根据你的需要进行配置：
+
+```bash
+# 复制配置文件
+cp .env.example .env.local
+```
+
+在 `.env.local` 文件中配置必要的环境变量：
+
+```env
+# ==================== API 配置 ====================
+# API 基础地址 - 用于接口代理和请求
+NEXT_PUBLIC_BASE_API=https://mock.apifox.cn/m1/2398938-0-default
+
+# ==================== 应用配置 ====================
+# 应用标题
+NEXT_PUBLIC_APP_TITLE=图书管理系统(开发版)
+```
+
+> 📝 **详细配置说明**: 查看 [环境变量配置指南](./docs/ENV_GUIDE.md) 获取完整的配置说明
+
+### 4. 安装 VS Code i18n 插件
+
+1. 下载插件：从 [GitHub Release](https://github.com/adzcsx2/i18n-auto-sync/releases) 下载 `i18n-auto-sync-0.1.0.vsix` 文件
+2. 安装插件：在 VS Code 中按 `Ctrl+Shift+P`，输入 `Extensions: Install from VSIX...`，选择下载的 `.vsix` 文件
+
+### 5. 启动开发
+
+```bash
+npm run dev
+```
+
+这个命令会启动 Next.js 开发服务器 (默认端口 3000)
+
+🎉 现在访问 [http://localhost:3000](http://localhost:3000) 即可开始使用！
+
 ## ✨ 核心特性
 
 -  🎯 **智能字符串转换** - 自动将 JSX 中的中文字符串转换为 `t("key")` 格式
@@ -190,6 +243,9 @@ VS Code 插件设置示例：
 ### 构建命令
 
 ```bash
+# 安装依赖
+npm install
+
 # 开发环境
 npm run dev                    # 开发模式启动
 
@@ -258,43 +314,7 @@ pm2 stop app-production        # 停止生产版
 
 > 📝 **详细部署说明**: 查看 [DEPLOYMENT.md](./docs/DEPLOYMENT.md) 获取完整的部署指南
 
-## 🚀 快速开始
-
-### 1. 环境配置
-
-复制环境配置示例文件并根据你的需要进行配置：
-
-```bash
-# 复制配置文件
-cp .env.example .env.local
-```
-
-在 `.env.local` 文件中配置必要的环境变量：
-
-```env
-# ==================== API 配置 ====================
-# API 基础地址 - 用于接口代理和请求
-NEXT_PUBLIC_BASE_API=https://mock.apifox.cn/m1/2398938-0-default
-
-# ==================== 应用配置 ====================
-# 应用标题
-NEXT_PUBLIC_APP_TITLE=图书管理系统(开发版)
-
-```
-
-> 📝 **详细配置说明**: 查看 [环境变量配置指南](./docs/ENV_GUIDE.md) 获取完整的配置说明
-
-### 2. 启动开发
-
-```bash
-npm run dev
-```
-
-这个命令会启动：
-
--  ⚡ **Next.js 开发服务器** (默认端口 3000)
-
-## 📁 项目结构
+##  项目结构
 
 ```
 next_app/
