@@ -1,6 +1,6 @@
 import { ApiResponse, http } from "@/http/http";
 import { BookQueryType } from "@/types/book";
-import { LoginReq, LoginReq, LoginRes } from "@/types/user";
+import { LoginRes, LoginReq } from "@/types/user";
 
 // 图书相关API
 export const api = {
@@ -52,9 +52,13 @@ export const api = {
 
   //退出登录
   async logout() {
-    return await http.post("/api/logout", {}, {
-      showLoading: true,
-      enableCache: false,
-    });
+    return await http.post(
+      "/api/logout",
+      {},
+      {
+        showLoading: true,
+        enableCache: false,
+      }
+    );
   },
 };
