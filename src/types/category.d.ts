@@ -7,7 +7,7 @@ export interface CategoryType {
   children: CategoryType[];
 }
 
-export interface CategoryQueryType {
+export interface CategoryListReq {
   name?: string;
   level?: number;
 }

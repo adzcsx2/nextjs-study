@@ -1,4 +1,5 @@
 import { ApiResponse, http } from "@/http/http";
+import { CategoryListReq, CategoryType as CategoryListRes } from "@/types";
 import { BookListReq, BookType } from "@/types/book";
 import { LoginRes, LoginReq } from "@/types/user";
 
@@ -29,6 +30,11 @@ export const api = {
     return await http.get<BookType[]>("/api/books", data, {
       throwError: false,
     });
+  },
+
+  // 获取分类列表
+  async getCategoryList(data?: CategoryListReq) {
+    return await http.get<CategoryListRes[]>("/api/categories", data);
   },
 
   // 创建图书
