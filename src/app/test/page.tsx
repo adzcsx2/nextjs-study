@@ -5,7 +5,6 @@ import { http } from "@/http/http";
 import { Button, Divider, Typography } from "antd";
 import TestComponent from "./TestComponent";
 import { useEffect, useState } from "react";
-import { eventBus } from "@/eventbus/eventBus";
 import { env } from "@/config/env";
 import { useTranslation } from "@/i18n/hooks";
 
@@ -90,7 +89,6 @@ const TestPage: React.FC = () => {
         onClick={() => {
           const a = count + 1;
           setCount(a);
-          eventBus.emit("testCount", count);
         }}
       >
         {t("测试eventbus")}
@@ -101,7 +99,6 @@ const TestPage: React.FC = () => {
         onClick={() => {
           const a = count + 1;
           setCount(a);
-          eventBus.emit("testCount", count);
         }}
       >
         {t("测试测试")}

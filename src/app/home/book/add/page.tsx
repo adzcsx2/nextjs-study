@@ -20,11 +20,13 @@ import {
   Upload,
 } from "antd";
 import { useEffect, useState } from "react";
+import { useTranslation } from "@/i18n/hooks";
 
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
 
 export default function Book_Add() {
+  const { t } = useTranslation();
   const [options, setOptions] = useState<{ label: string; value: string }[]>(
     []
   );
@@ -57,9 +59,9 @@ export default function Book_Add() {
           }}
         >
           <Form.Item
-            label="名称"
+            label={t("名称")}
             name="name"
-            rules={[{ required: true, message: "请输入名称" }]}
+            rules={[{ required: true, message: t("请输入名称") }]}
           >
             <Input
               onChange={(e) => {
@@ -68,9 +70,9 @@ export default function Book_Add() {
             />
           </Form.Item>
           <Form.Item
-            label="作者"
+            label={t("作者")}
             name="author"
-            rules={[{ required: true, message: "请输入作者" }]}
+            rules={[{ required: true, message: t("请输入作者") }]}
           >
             <Input
               onChange={(e) => {
@@ -82,9 +84,9 @@ export default function Book_Add() {
             />
           </Form.Item>
           <Form.Item
-            label="分类"
+            label={t("分类")}
             name="category"
-            rules={[{ required: true, message: "请选择分类" }]}
+            rules={[{ required: true, message: t("请选择分类") }]}
           >
             <Select
               options={options}
@@ -94,7 +96,7 @@ export default function Book_Add() {
             ></Select>
           </Form.Item>
 
-          <Form.Item label="封面" valuePropName="fileList">
+          <Form.Item label={t("封面")} valuePropName="fileList">
             <Upload
               listType="picture-card"
               onChange={(upload) => {
@@ -115,7 +117,7 @@ export default function Book_Add() {
               )}
             </Upload>
           </Form.Item>
-          <Form.Item label="出版日期">
+          <Form.Item label={t("出版日期")}>
             <DatePicker
               onChange={(date, dateString) => {
                 setBookData({
@@ -125,7 +127,7 @@ export default function Book_Add() {
               }}
             />
           </Form.Item>
-          <Form.Item label="描述">
+          <Form.Item label={t("描述")}>
             <TextArea
               rows={4}
               onChange={(e) => {
@@ -137,9 +139,7 @@ export default function Book_Add() {
             />
           </Form.Item>
           <Form.Item className="flex justify-center !ml-10">
-            <Button type="primary" htmlType="submit">
-              创建
-            </Button>
+            <Button type="primary" htmlType="submit">{t("创建")}</Button>
           </Form.Item>
         </Form>
       </>
