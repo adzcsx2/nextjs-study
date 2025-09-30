@@ -1,48 +1,34 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import Image from "next/image";
 import Icon, {
   AuditOutlined,
   BookOutlined,
+  DownOutlined,
   LaptopOutlined,
   LayoutOutlined,
   NotificationOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
-import { Breadcrumb, Layout as AntdLayout, Menu, theme } from "antd";
+import {
+  Breadcrumb,
+  Layout as AntdLayout,
+  Menu,
+  theme,
+  Dropdown,
+  Space,
+} from "antd";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { usePathname, useRouter } from "next/navigation";
 import { icons } from "antd/es/image/PreviewGroup";
 import i18n from "@/i18n";
+import { useUserStore } from "@/stores/userStore";
+import { api } from "@/api/api";
+import { BookListReq, BookType } from "@/types/book";
 import { useTranslation } from "@/i18n/hooks";
+
 const { Header, Content, Footer, Sider } = AntdLayout;
-
-const items1: MenuProps["items"] = ["1", "2", "3"].map((key) => ({
-  key,
-  label: `nav ${key}`,
-}));
-
-const items2: MenuProps["items"] = [
-  UserOutlined,
-  LaptopOutlined,
-  NotificationOutlined,
-].map((icon, index) => {
-  const key = String(index + 1);
-
-  return {
-    key: `sub${key}`,
-    icon: React.createElement(icon),
-    label: `subnav ${key}`,
-    children: Array.from({ length: 4 }).map((_, j) => {
-      const subKey = index * 4 + j + 1;
-      return {
-        key: subKey,
-        label: `option${subKey}`,
-      };
-    }),
-  };
-});
 
 const ITEM = [
   {
@@ -89,6 +75,16 @@ function HomeLayout({
   const pathname = usePathname(); // 获取当前路径
   const [label, setLabel] = useState("");
 
+  const userStore = useUserStore();
+
+  const menuItem: MenuProps["items"] = [
+    i18n.t("个人中心"),
+    i18n.t("退出登录"),
+  ].map((key) => ({
+    key,
+    label: `${key}`,
+  }));
+
   useEffect(() => {
     // pathname can be null during initial render in Next.js, guard it
     if (!pathname) return;
@@ -103,6 +99,7 @@ function HomeLayout({
     }
     getCurrentLabel(pathname);
   }, [pathname, router]);
+
   function getCurrentLabel(key: string) {
     ITEM.forEach((item) => {
       if (item.children) {
@@ -120,14 +117,42 @@ function HomeLayout({
   }
   return (
     <AntdLayout className="w-full min-h-screen flex flex-col ">
-  <Header className="!bg-white h-16 flex items-center">
+      <Header className="!bg-white h-16 flex items-center">
         <div className="flex items-center ">
           <Image src="/logo.svg" width={30} height={30} alt="Logo" />
           <span className="ml-2 text-blue-400 text-xl font-bold">
             {t("三木图书管理系统")}
           </span>
         </div>
-        <div className=" ml-auto">{t("登录")}</div>
+
+        <Dropdown
+          className=" ml-auto"
+          menu={{
+            items: menuItem,
+            onClick: (key) => {
+              switch (key.key) {
+                case i18n.t("退出登录"):
+                  api.logout().then(() => {
+                    userStore.logout();
+                    router.push("/login");
+                  });
+                  return;
+                case i18n.t("个人中心"):
+                  console.log(key);
+                  return;
+                default:
+                  return;
+              }
+            },
+          }}
+        >
+          <a onClick={(e) => e.preventDefault()}>
+            <Space>
+              {userStore.user?.name ? userStore.user.name : t("登录")}
+              <DownOutlined />
+            </Space>
+          </a>
+        </Dropdown>
       </Header>
       <div className=" !flex-1 !w-full mt-0.5  ">
         <AntdLayout className="h-full flex flex-col">

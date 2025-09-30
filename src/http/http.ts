@@ -61,7 +61,7 @@ interface RequestOptions extends Omit<RequestInit, "cache"> {
   showSuccess?: boolean;
   needToken?: boolean;
   retry?: number;
-  params?: Record<string, string | number | boolean | null | undefined>;
+  params?: Record<string, unknown>;
   throwError?: boolean; // 是否抛出错误供.catch()捕获，默认false
   timeout?: number; // 自定义超时时间
   validateStatus?: (status: number) => boolean; // 自定义状态码验证
@@ -93,6 +93,9 @@ interface ExtendedError extends Error {
 
 // ==================== 全局状态 ====================
 const pendingRequests = new Map<string, AbortController>();
+// Store in-flight request promises so concurrent identical requests can reuse the
+// same promise instead of issuing multiple network calls.
+const pendingPromises = new Map<string, Promise<unknown>>();
 const requestCache = new Map<string, CacheItem>();
 let loadingInstance: (() => void) | null = null;
 let loadingCount = 0;
@@ -119,7 +122,7 @@ const generateReqKey = (
   );
 const buildUrlWithParam = (
   baseUrl: string,
-  params?: Record<string, string | number | boolean | null | undefined>
+  params?: Record<string, unknown>
 ): string => {
   if (!params || Object.keys(params).length === 0) return baseUrl;
   const searchParams = new URLSearchParams();
@@ -322,6 +325,12 @@ class HttpClient {
     const controller = new AbortController();
     const reqKey = generateReqKey(url, method, params, restOptions.body);
 
+    // If preventDuplicate is enabled and there's already an in-flight promise for
+    // the same request key, return that promise to avoid sending another request.
+    if (preventDuplicate && pendingPromises.has(reqKey)) {
+      return pendingPromises.get(reqKey) as Promise<T | null>;
+    }
+
     // 构建请求URL
     const baseURL = getBaseURL();
     const requestUrl = buildUrlWithParam(baseURL + url, params);
@@ -385,157 +394,167 @@ class HttpClient {
     const cleanup = () => {
       clearTimeout(timeoutId);
       removePendingRequest(reqKey);
+      // remove coalesced promise when request completes/aborts
+      pendingPromises.delete(reqKey);
       if (needLoading) hideLoading();
     };
-
-    try {
-      // 发送请求
-      const response = await fetch(requestUrl, {
-        method,
-        headers,
-        signal: controller.signal,
-        credentials: "include", // 包含 HttpOnly Cookie
-        ...restOptions,
-      });
-      cleanup();
-
-      // 检查响应状态
-      if (!validateStatus(response.status)) {
-        await handleErrorResponse(response);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      // 处理304 Not Modified状态
-      if (response.status === 304) {
-        // 304状态码表示资源未修改，应该使用缓存
-        if (shouldCache) {
-          const cacheKey = generateCacheKey(
-            url,
-            method,
-            params,
-            restOptions.body,
-            cacheConfig.key
-          );
-          const cachedData = getCachedData<T>(cacheKey);
-          if (cachedData !== null) {
-            logger.response(requestUrl, cachedData, Date.now() - startTime);
-            if (process.env.NODE_ENV === "development") {
-              console.log("🔄 304 Not Modified - Using cache:", cacheKey);
-            }
-            return cachedData;
-          }
-        }
-        // 如果没有缓存，304状态码可能是错误的
-        throw new Error("304 Not Modified but no cache available");
-      }
-
-      // 解析响应
-      // const data = await response.json();
-
-      //模拟返回
-      let data = await response.json();
-      data = {
-        ...data,
-        message: "success",
-        code: 200,
-      };
-
-      // 业务状态码处理
-      if (data.code === 200) {
-        if (showSuccess) {
-          message.success(data.message || t("network:operationSuccess"));
-        }
-
-        // 缓存成功的响应数据
-        if (shouldCache) {
-          const cacheKey = generateCacheKey(
-            url,
-            method,
-            params,
-            restOptions.body,
-            cacheConfig.key
-          );
-          setCachedData(cacheKey, data.data, cacheConfig.ttl);
-          if (process.env.NODE_ENV === "development") {
-            console.log("💾 Data cached:", cacheKey);
-          }
-        }
-
-        logger.response(requestUrl, data.data, Date.now() - startTime);
-        return data.data; // 成功时直接返回 data
-      } else {
-        message.error(data.message || t("network:operationFailed"));
-        logger.error(requestUrl, data, Date.now() - startTime);
-        // 根据配置决定是否抛出错误
-        if (throwError) {
-          const error = new Error(
-            data.message || t("network:operationFailed")
-          ) as ExtendedError;
-          error.code = data.code;
-          error.response = data;
-          throw error;
-        }
-        // 默认情况下返回 null，表示操作失败但已处理
-        return null as unknown as T;
-      }
-    } catch (error: unknown) {
-      cleanup();
-      const err = error as Error;
-
-      // 重复请求处理
-      if (
-        err?.name === "AbortError" &&
-        err.message?.includes(t("network:duplicateRequest"))
-      ) {
-        if (throwError) {
-          const duplicateError = new Error(
-            err.message || t("network:duplicateRequest")
-          ) as ExtendedError;
-          duplicateError.code = -1;
-          duplicateError.type = "duplicate";
-          throw duplicateError;
-        }
-        // 默认情况下静默处理重复请求
-        return null as unknown as T;
-      }
-
-      // 重试机制
-      if (retry > 0) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        return this.coreRequest<T>(url, {
-          ...options,
-          retry: retry - 1,
+    // Wrap the actual network flow in a promise so we can store it in
+    // `pendingPromises` and return the same promise for concurrent identical
+    // requests.
+    const requestPromise = (async (): Promise<T | null> => {
+      try {
+        // 发送请求
+        const response = await fetch(requestUrl, {
+          method,
+          headers,
+          signal: controller.signal,
+          credentials: "include", // 包含 HttpOnly Cookie
+          ...restOptions,
         });
-      }
+        cleanup();
 
-      // 错误处理 - 显示错误消息
-      handleError(error);
-      logger.error(requestUrl, error, Date.now() - startTime);
-      if (throwError) {
-        const finalError = new Error(
-          err?.message || t("network:requestSendFailed")
-        ) as ExtendedError;
-        finalError.code = -1;
-        finalError.originalError = error;
-        throw finalError;
+        // 检查响应状态
+        if (!validateStatus(response.status)) {
+          await handleErrorResponse(response);
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // 处理304 Not Modified状态
+        if (response.status === 304) {
+          // 304状态码表示资源未修改，应该使用缓存
+          if (shouldCache) {
+            const cacheKey = generateCacheKey(
+              url,
+              method,
+              params,
+              restOptions.body,
+              cacheConfig.key
+            );
+            const cachedData = getCachedData<T>(cacheKey);
+            if (cachedData !== null) {
+              logger.response(requestUrl, cachedData, Date.now() - startTime);
+              if (process.env.NODE_ENV === "development") {
+                console.log("🔄 304 Not Modified - Using cache:", cacheKey);
+              }
+              return cachedData;
+            }
+          }
+          // 如果没有缓存，304状态码可能是错误的
+          throw new Error("304 Not Modified but no cache available");
+        }
+
+        // 解析响应
+        let data = await response.json();
+        data = {
+          ...data,
+          message: "success",
+          code: 200,
+        };
+
+        // 业务状态码处理
+        if (data.code === 200) {
+          if (showSuccess) {
+            message.success(data.message || t("network:operationSuccess"));
+          }
+
+          // 缓存成功的响应数据
+          if (shouldCache) {
+            const cacheKey = generateCacheKey(
+              url,
+              method,
+              params,
+              restOptions.body,
+              cacheConfig.key
+            );
+            setCachedData(cacheKey, data.data, cacheConfig.ttl);
+            if (process.env.NODE_ENV === "development") {
+              console.log("💾 Data cached:", cacheKey);
+            }
+          }
+
+          logger.response(requestUrl, data.data, Date.now() - startTime);
+          return data.data; // 成功时直接返回 data
+        } else {
+          message.error(data.message || t("network:operationFailed"));
+          logger.error(requestUrl, data, Date.now() - startTime);
+          // 根据配置决定是否抛出错误
+          if (throwError) {
+            const error = new Error(
+              data.message || t("network:operationFailed")
+            ) as ExtendedError;
+            error.code = data.code;
+            error.response = data;
+            throw error;
+          }
+          // 默认情况下返回 null，表示操作失败但已处理
+          return null as unknown as T;
+        }
+      } catch (error: unknown) {
+        cleanup();
+        const err = error as Error;
+
+        // 重复请求处理
+        if (
+          err?.name === "AbortError" &&
+          err.message?.includes(t("network:duplicateRequest"))
+        ) {
+          if (throwError) {
+            const duplicateError = new Error(
+              err.message || t("network:duplicateRequest")
+            ) as ExtendedError;
+            duplicateError.code = -1;
+            duplicateError.type = "duplicate";
+            throw duplicateError;
+          }
+          // 默认情况下静默处理重复请求
+          return null as unknown as T;
+        }
+
+        // 重试机制
+        if (retry > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          return this.coreRequest<T>(url, {
+            ...options,
+            retry: retry - 1,
+          });
+        }
+
+        // 错误处理 - 显示错误消息
+        handleError(error);
+        logger.error(requestUrl, error, Date.now() - startTime);
+        if (throwError) {
+          const finalError = new Error(
+            err?.message || t("network:requestSendFailed")
+          ) as ExtendedError;
+          finalError.code = -1;
+          finalError.originalError = error;
+          throw finalError;
+        }
+        // 默认情况下返回 null，表示请求失败但已处理
+        return null as unknown as T;
       }
-      // 默认情况下返回 null，表示请求失败但已处理
-      return null as unknown as T;
-    }
+    })();
+
+    // store the promise so concurrent identical requests can await it
+    pendingPromises.set(reqKey, requestPromise as Promise<unknown>);
+
+    // await and return the result of the promise
+    return (await requestPromise) as T | null;
   }
 
   /**
    * GET 请求 - 与POST请求使用相同的参数格式
    */
-  async get<T = unknown>(
+  async get<T = unknown, P = unknown>(
     url: string,
-    data?: Record<string, string | number | boolean | null | undefined> | null,
+    data?: P,
     options?: Omit<RequestOptions, "method" | "params">
   ): Promise<T | null> {
     return this.coreRequest<T>(url, {
       ...options,
       method: "GET",
-      params: data || undefined,
+      // coreRequest expects params?: Record<string, unknown>
+      params: (data as unknown as Record<string, unknown>) || undefined,
     });
   }
 

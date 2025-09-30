@@ -1,15 +1,24 @@
 "use client";
 import { Button, Input, Select, Table, TableProps } from "antd";
 import { useEffect, useState } from "react";
-import { BookType } from "@/types/book";
+import { BookListReq, BookType } from "@/types/book";
 import { useTranslation } from "@/i18n/hooks";
+import { api } from "@/api/api";
+import typography from "antd/es/typography";
+import Image from "antd/es/image";
+import timeUtils from "@/utils/timeUtils";
+
 export default function Book() {
   const { t } = useTranslation();
   const [options, setOptions] = useState([]);
-  const [books, setBooks] = useState<BookType[]>([]);
 
+  const [bookList, setBookList] = useState<BookType[]>([]);
+  
   useEffect(() => {
-    console.log("options", t("啊啊啊"));
+    const req: BookListReq = {};
+    api.getBookList(req).then((res) => {
+      setBookList(res || []);
+    });
   }, []);
 
   const columns: TableProps<BookType>["columns"] = [
@@ -17,33 +26,46 @@ export default function Book() {
       title: t("名称"),
       dataIndex: "name",
       key: "name",
-      render: (text) => <a>{text}</a>,
+      render: (text) => <typography.Text>{text}</typography.Text>,
     },
     {
       title: t("封面"),
       dataIndex: "cover",
       key: "cover",
-      render: (text) => <a>{text}</a>,
+      render: () => (
+        <Image
+          src="https://www.szjlc.cn/nw/thumbnail/8613816169529511936"
+          alt="cover"
+          width={50}
+          height={70}
+        />
+      ),
     },
     {
       title: t("作者"),
       dataIndex: "author",
       key: "author",
+      render: (text) => <typography.Text>{text}</typography.Text>,
     },
     {
       title: t("分类"),
-      dataIndex: "type",
-      key: "type",
+      dataIndex: "category",
+      key: "category",
+      render: (text) => <typography.Text>-</typography.Text>,
     },
     {
       title: t("库存"),
-      dataIndex: "in_stock",
-      key: "in_stock",
+      dataIndex: "stock",
+      key: "stock",
+      render: (text) => <typography.Text>{text}</typography.Text>,
     },
     {
       title: t("创建时间"),
-      dataIndex: "creation_time",
-      key: "creation_time",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (text) => (
+        <typography.Text>{timeUtils.format(text)}</typography.Text>
+      ),
     },
   ];
 
@@ -73,7 +95,12 @@ export default function Book() {
         <Button type="primary">{t("搜索")}</Button>
         <Button>{t("清空")}</Button>
       </div>
-      <Table<BookType> className="mt-5" columns={columns} dataSource={books} />
+      <Table<BookType>
+        className="mt-5"
+        columns={columns}
+        dataSource={bookList}
+        rowKey="_id"
+      />
     </div>
   );
 }

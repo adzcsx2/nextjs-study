@@ -11,11 +11,13 @@ export interface BookType {
   category: string; // 分类
 }
 
-export interface BookQueryType {
-  name: string;
-  category: string;
-  author: string;
-}
+export interface BookListReq {
+    author?: string;
+    current?: number;
+    name?: string;
+    pageSize?: number;
+    tag?: string;
+  }
 
 export interface BookFormType {
   title: string;
