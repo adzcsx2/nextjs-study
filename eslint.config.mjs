@@ -20,6 +20,16 @@ const eslintConfig = [
       "next-env.d.ts",
     ],
   },
+  // Turn off anonymous default export rule project-wide (prevents
+  // "Assign object to a variable before exporting as module default" warnings)
+  {
+    rules: {
+      // This rule comes from eslint-plugin-import via the shared Next.js config.
+      // Disabling it here ensures files that export default anonymous objects
+      // like `export default { ... }` won't trigger ESLint errors.
+      'import/no-anonymous-default-export': 'off',
+    },
+  },
 ];
 
 export default eslintConfig;
