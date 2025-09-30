@@ -1,0 +1,2 @@
+# 使用 .gitattributes 文件来明确指定换行符行为：
+* text=auto
