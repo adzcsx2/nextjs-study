@@ -88,13 +88,20 @@ function HomeLayout({
   }));
 
   useEffect(() => {
-    // 获取用户信息
-    useUserStore.persist.onFinishHydration(() => {
-      if (userStore.user == null || userStore.user._id === "") {
+    // 获取用户信息,第一次进来没登录,跳转到登录页
+    if (!useUserStore.getState().user?._id) {
+      router.push(Path.LOGIN);
+      return;
+    }
+    // 订阅用户状态变化, 如果用户信息变成空了,说明退出登录了,跳转到登录页
+    const unsub = useUserStore.subscribe((state) => {
+      if (!state.user?._id) {
         router.push(Path.LOGIN);
       }
     });
-  });
+
+    return unsub();
+  }, [router]);
 
   useEffect(() => {
     // pathname can be null during initial render in Next.js, guard it
