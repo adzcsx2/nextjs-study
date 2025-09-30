@@ -26,6 +26,8 @@ import i18n from "@/i18n";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/api/api";
 import { BookListReq, BookType } from "@/types/book";
+import path from "path";
+import { Path } from "@/router/path";
 import { useTranslation } from "@/i18n/hooks";
 
 const { Header, Content, Footer, Sider } = AntdLayout;
@@ -86,6 +88,15 @@ function HomeLayout({
   }));
 
   useEffect(() => {
+    // 获取用户信息
+    useUserStore.persist.onFinishHydration(() => {
+      if (userStore.user == null || userStore.user._id === "") {
+        router.push(Path.LOGIN);
+      }
+    });
+  });
+
+  useEffect(() => {
     // pathname can be null during initial render in Next.js, guard it
     if (!pathname) return;
 
@@ -134,11 +145,14 @@ function HomeLayout({
                 case i18n.t("退出登录"):
                   api.logout().then(() => {
                     userStore.logout();
-                    router.push("/login");
+                    router.push(Path.LOGIN);
                   });
                   return;
                 case i18n.t("个人中心"):
-                  console.log(key);
+                  if (userStore.user) {
+                    setLabel(i18n.t("个人中心"));
+                    router.push(Path.USER_PERSONAL_CENTER(userStore.user._id));
+                  }
                   return;
                 default:
                   return;
@@ -155,6 +169,7 @@ function HomeLayout({
         </Dropdown>
       </Header>
       <div className=" !flex-1 !w-full mt-0.5  ">
+        {/* 侧边栏  */}
         <AntdLayout className="h-full flex flex-col">
           <Sider width={200}>
             <Menu
@@ -168,7 +183,9 @@ function HomeLayout({
               }}
             />
           </Sider>
+          {/* 内容区  */}
           <Content className="p-10 h-full flex flex-col flex-1">
+            {/* 标题  */}
             <p className="text-4xl ">{label}</p>
             <div className="rounded-lg  p-5  bg-white mt-5 h-full ">
               {children}

@@ -1,24 +1,25 @@
-import { LoginRes } from "@/types/user";
+import { User } from "@/types/user";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 interface UserState {
-  user: LoginRes | null;
-  setUser: (user: LoginRes) => void;
+  user: User | null;
+  setUser: (user: User) => void;
   logout: () => void;
-  getUser: () => LoginRes | null;
+  getUser: () => User | null;
 }
 
 export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({
       user: null,
-      setUser: (user: LoginRes) => set({ user }),
+      setUser: (user: User) => set({ user }),
       logout: () => set({ user: null }),
       getUser: () => get().user,
     }),
     {
       name: "user-storage", // localStorage key
+      storage: createJSONStorage(() => localStorage),
     }
   )
 );

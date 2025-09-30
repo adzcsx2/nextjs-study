@@ -3,12 +3,12 @@ import { Button, Form, FormProps, Image, Input, Typography } from "antd";
 import { use, useEffect, useState } from "react";
 
 import { api } from "@/api/api";
-import { loginReq } from "@/types/login";
+import { LoginReq } from "@/types/login";
 import { useTranslation } from "@/i18n/hooks";
 import { useUserStore } from "@/stores/userStore";
 import { Path } from "@/router/path";
 import { useRouter } from "next/navigation";
-import { LoginRes } from "@/types";
+import { User } from "@/types/user";
 
 export default function Login() {
   const { t } = useTranslation("common");
@@ -17,20 +17,20 @@ export default function Login() {
 
   const userStore = useUserStore();
   const router = useRouter();
-  const onFinish: FormProps<loginReq>["onFinish"] = (values) => {
+  const onFinish: FormProps<LoginReq>["onFinish"] = (values) => {
     api
-      .login({ name: values.username, password: values.password }, true)
+      .login({ name: values.name, password: values.password }, true)
       .then((data) => {
         // 后端会通过 Set-Cookie 头自动设置 HttpOnly Cookie
         // 前端不需要手动存储 token
         console.log("postLogin success:", data);
         // 登录成功后跳转到主页或其他页面
-        userStore.setUser(data as LoginRes);
+        userStore.setUser(data as User);
         router.push(Path.HOME);
       });
   };
 
-  const onFinishFailed: FormProps<loginReq>["onFinishFailed"] = (errorInfo) => {
+  const onFinishFailed: FormProps<LoginReq>["onFinishFailed"] = (errorInfo) => {
     console.log("Failed:", errorInfo);
     setLoginState({
       status: "error",
@@ -65,15 +65,15 @@ export default function Login() {
         onFinishFailed={onFinishFailed}
         autoComplete="off"
       >
-        <Form.Item<loginReq>
+        <Form.Item<LoginReq>
           label={t("账号")}
-          name="username"
+          name="name"
           rules={[{ required: true, message: t("请输入账号") }]}
         >
           <Input className="!w-full" />
         </Form.Item>
 
-        <Form.Item<loginReq>
+        <Form.Item<LoginReq>
           label={t("密码")}
           name="password"
           rules={[

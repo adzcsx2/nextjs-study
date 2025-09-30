@@ -1,13 +1,14 @@
 import { ApiResponse, http } from "@/http/http";
 import { CategoryListReq, CategoryType as CategoryListRes } from "@/types";
 import { BookListReq, BookType } from "@/types/book";
-import { LoginRes, LoginReq } from "@/types/user";
+import { User } from "@/types/user";
+import { LoginReq } from "@/types/login";
 
 // 图书相关API
 export const api = {
   //登录
   async login(data: LoginReq, isShowLoading = true) {
-    return await http.post<LoginRes>("/api/login", data, {
+    return await http.post<User>("/api/login", data, {
       showLoading: isShowLoading,
       throwError: false,
       enableCache: false,
@@ -35,6 +36,10 @@ export const api = {
   // 获取分类列表
   async getCategoryList(data?: CategoryListReq) {
     return await http.get<CategoryListRes[]>("/api/categories", data);
+  },
+  // 获取用户信息
+  async getUserInfo(id?: string) {
+    return await http.get<User>("/api/users/" + id);
   },
 
   // 创建图书

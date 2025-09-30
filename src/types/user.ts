@@ -1,7 +1,7 @@
 import { USER_ROLE, USER_SEX, USER_STATUS } from "@/utils/constants";
 import { ValueOf } from "next/dist/shared/lib/constants";
 
-export interface LoginRes {
+export interface User {
   name: string;
   _id: string;
   role: string;
@@ -10,10 +10,6 @@ export interface LoginRes {
   token: string | null;
 }
 
-export interface LoginReq {
-  name: string;
-  password: string;
-}
 
 export interface UserQueryType {
   current?: number;
@@ -25,5 +21,5 @@ export interface UserQueryType {
 
 export interface UserFormProps {
   title: string;
-  editData?: LoginReq;
+  editData?: User;
 }
