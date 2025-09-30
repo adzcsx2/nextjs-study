@@ -16,7 +16,7 @@ export const Path = {
   BORROW_BOOK: "/home/borrow/book_borrow",
 
   // 用户管理模块
-  USER_PERSONAL_CENTER: (id: string) => `/home/user/personal_center/${id}`,
+  USER_PERSONAL_CENTER: (id: string) => `/home/user/personal-center/${id}`,
   USER_LIST: "/home/user/list",
   USER_ADD: "/home/user/add",
 
