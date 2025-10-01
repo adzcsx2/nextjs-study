@@ -16,6 +16,7 @@ import { useUserStore } from "@/stores/userStore";
 import { api } from "@/api/api";
 import { Path } from "@/router/path";
 import { useTranslation } from "@/i18n/hooks";
+import { useHomeTitle } from "@/stores/home-title";
 
 const { Header, Content, Footer, Sider } = AntdLayout;
 
@@ -75,6 +76,15 @@ function HomeLayout({
   }));
 
   useEffect(() => {
+    setLabel("");
+
+    const unsub = useHomeTitle.subscribe((state) => {
+      setLabel(state.title ? state.title : "");
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
     // 获取用户信息,第一次进来没登录,跳转到登录页
     if (!useUserStore.getState().user?._id) {
       router.push(Path.LOGIN);
@@ -110,12 +120,14 @@ function HomeLayout({
       if (item.children) {
         item.children?.forEach((child) => {
           if (child.key === key) {
-            setLabel(child.label as string);
+            useHomeTitle.setState({ title: child.label as string });
+            // setLabel(child.label as string);
           }
         });
       } else {
         if (item.key === key) {
-          setLabel(item.label as string);
+          useHomeTitle.setState({ title: item.label as string });
+          // setLabel(item.label as string);
         }
       }
     });
@@ -144,8 +156,13 @@ function HomeLayout({
                   return;
                 case i18n.t("个人中心"):
                   if (userStore.user) {
-                    setLabel(i18n.t("个人中心"));
-                    router.push(Path.USER_PERSONAL_CENTER(userStore.user._id));
+                    useHomeTitle.setState({ title: i18n.t("个人中心") });
+                    // setLabel(i18n.t("个人中心"));
+                    router.push(
+                      Path.USER_PERSONAL_CENTER(
+                        userStore.user._id ? userStore.user._id : ""
+                      )
+                    );
                   }
                   return;
                 default:

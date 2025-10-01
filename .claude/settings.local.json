@@ -4,7 +4,11 @@
       "Bash(taskkill:*)",
       "Bash(tskill:*)",
       "Bash(netstat:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(echo:*)",
+      "Bash(powershell \"Get-ChildItem -Path $env:APPDATA -Recurse -Filter ''settings.json'' -ErrorAction SilentlyContinue | Select-Object -First 5\")",
+      "Bash(vscode:*)",
+      "Bash(code:*)"
     ],
     "deny": [],
     "ask": []

@@ -19,6 +19,7 @@ export const Path = {
   USER_PERSONAL_CENTER: (id: string) => `/home/user/personal-center/${id}`,
   USER_LIST: "/home/user/list",
   USER_ADD: "/home/user/add",
+  USER_EDIT: (id: string) => `/home/user/personal-center/${id}`,
 
   // 分类管理模块
   CATEGORY_MANAGE: "/home/category",

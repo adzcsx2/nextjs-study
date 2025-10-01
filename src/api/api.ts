@@ -41,6 +41,18 @@ export const api = {
   async getUserInfo(id?: string) {
     return await http.get<User>("/api/users/" + id);
   },
+  // 获取用户列表
+  async getUserList() {
+    return await http.get<User[]>("/api/users");
+  },
+  // 添加用户
+  async addUser(data: User) {
+    return await http.post<string>("/api/users/add", data);
+  },
+  // 更新用户
+  async updateUser(data: User) {
+    return await http.post<string>("/api/users/update", data);
+  },
 
   // 创建图书
   async create(data: BookType) {
