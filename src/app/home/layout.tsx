@@ -1,32 +1,19 @@
 "use client";
-import React, { use, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import Icon, {
+import {
   AuditOutlined,
   BookOutlined,
   DownOutlined,
-  LaptopOutlined,
   LayoutOutlined,
-  NotificationOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
-import {
-  Breadcrumb,
-  Layout as AntdLayout,
-  Menu,
-  theme,
-  Dropdown,
-  Space,
-} from "antd";
-import { AntdRegistry } from "@ant-design/nextjs-registry";
+import { Layout as AntdLayout, Menu, Dropdown, Space } from "antd";
 import { usePathname, useRouter } from "next/navigation";
-import { icons } from "antd/es/image/PreviewGroup";
 import i18n from "@/i18n";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/api/api";
-import { BookListReq, BookType } from "@/types/book";
-import path from "path";
 import { Path } from "@/router/path";
 import { useTranslation } from "@/i18n/hooks";
 

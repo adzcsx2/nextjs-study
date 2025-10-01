@@ -16,7 +16,6 @@ export default function Personal_Center({
   useEffect(() => {
     api.getUserInfo(userId).then((data: User | null) => {
       setUser(data);
-      console.log(data);
       if (data) {
         // populate form fields when async data arrives
         form.setFieldsValue({
@@ -82,7 +81,9 @@ export default function Personal_Center({
           </Radio.Group>
         </Form.Item>
         <Form.Item>
-          <Button type="primary" htmlType="submit">{t("保存")}</Button>
+          <Button type="primary" htmlType="submit">
+            {t("保存")}
+          </Button>
         </Form.Item>
       </Form>
     </main>
