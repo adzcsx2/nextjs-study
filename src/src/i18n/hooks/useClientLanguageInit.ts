@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+gitimport { useEffect, useState } from 'react';
 import i18n from '../index';
 import { getLang } from '../utils';
 
@@ -11,12 +11,12 @@ export function useClientLanguageInit() {
     const initializeLanguage = async () => {
       try {
         const detectedLang = getLang();
-        
+
         // 设置语言但不等待资源加载，避免阻塞渲染
         if (detectedLang !== i18n.language) {
           await i18n.changeLanguage(detectedLang);
         }
-        
+
         setIsInitialized(true);
       } catch (error) {
         console.error('Failed to initialize language:', error);
@@ -26,6 +26,7 @@ export function useClientLanguageInit() {
     };
 
     initializeLanguage();
+    // 不返回异步函数的结果，避免 useEffect 返回 Promise
   }, []);
 
   return {

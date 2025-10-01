@@ -87,7 +87,7 @@ function HomeLayout({
       }
     });
 
-    return unsub();
+    return unsub;
   }, [router]);
 
   useEffect(() => {

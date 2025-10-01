@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(taskkill:*)",
-      "Bash(tskill:*)"
+      "Bash(tskill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []
